@@ -1,0 +1,178 @@
+{% extends 'base.html' %}
+{% load static %}
+
+{% block title %}Onboard New Doctor | {{ DEFAULT_HOSPITAL_NAME }}{% endblock %}
+
+{% block content %}
+<div class="dashboard-header">
+  <div>
+    <h1>Onboard Medical Clinician</h1>
+    <p class="dashboard-subtitle">
+      Register a verified doctor profile for {{ DEFAULT_HOSPITAL_NAME }}. Doctors log in with their assigned credentials.
+    </p>
+  </div>
+  <a href="{% url 'admin_doctor_list' %}" class="btn btn-outline btn-sm">&larr; Back to Doctor Directory</a>
+</div>
+
+<div class="form-card wide">
+  <form method="POST" novalidate>
+    {% csrf_token %}
+
+    {% if form.non_field_errors %}
+      <div class="alert alert-error">
+        {{ form.non_field_errors.0 }}
+      </div>
+    {% endif %}
+
+    <h3 style="font-size:1.15rem; color:var(--slate-800); margin-bottom:14px; border-bottom:1px solid var(--slate-200); padding-bottom:6px;">
+      1. Clinician Identity & Authentication Credentials
+    </h3>
+
+    <div class="form-row">
+      <div class="form-group">
+        <label for="{{ form.full_name.id_for_label }}">Doctor Full Name *</label>
+        {{ form.full_name }}
+        {% if form.full_name.errors %}<div class="form-error-text">{{ form.full_name.errors.0 }}</div>{% endif %}
+      </div>
+      <div class="form-group">
+        <label for="{{ form.email.id_for_label }}">Doctor Email Address (Login Username) *</label>
+        {{ form.email }}
+        {% if form.email.errors %}<div class="form-error-text">{{ form.email.errors.0 }}</div>{% endif %}
+      </div>
+    </div>
+
+    <div class="form-row">
+      <div class="form-group">
+        <div style="display:flex; justify-content:space-between; align-items:center;">
+          <label for="{{ form.password.id_for_label }}">Initial Login Password *</label>
+          <button type="button" id="btn-generate-password" class="btn btn-sm btn-outline" style="font-size:0.75rem; padding:2px 8px; margin-bottom:4px;">
+            ⚡ Generate Temporary Password
+          </button>
+        </div>
+        {{ form.password }}
+        {% if form.password.errors %}<div class="form-error-text">{{ form.password.errors.0 }}</div>{% endif %}
+        <div class="form-help-text" id="password-help-text">Share this password securely with the doctor.</div>
+      </div>
+      <div class="form-group">
+        <label for="{{ form.confirm_password.id_for_label }}">Confirm Password *</label>
+        {{ form.confirm_password }}
+        {% if form.confirm_password.errors %}<div class="form-error-text">{{ form.confirm_password.errors.0 }}</div>{% endif %}
+      </div>
+    </div>
+
+    <div class="form-group">
+      <label for="{{ form.contact_number.id_for_label }}">Doctor Phone / Office Extension *</label>
+      {{ form.contact_number }}
+      {% if form.contact_number.errors %}<div class="form-error-text">{{ form.contact_number.errors.0 }}</div>{% endif %}
+    </div>
+
+    <h3 style="font-size:1.15rem; color:var(--slate-800); margin-top:24px; margin-bottom:14px; border-bottom:1px solid var(--slate-200); padding-bottom:6px;">
+      2. Medical Specialty & Qualifications
+    </h3>
+
+    <div class="form-row">
+      <div class="form-group">
+        <label for="{{ form.specialization.id_for_label }}">Medical Specialization *</label>
+        {{ form.specialization }}
+        {% if form.specialization.errors %}<div class="form-error-text">{{ form.specialization.errors.0 }}</div>{% endif %}
+      </div>
+      <div class="form-group">
+        <label for="{{ form.qualification.id_for_label }}">Medical Qualifications (e.g. MBBS, MD) *</label>
+        {{ form.qualification }}
+        {% if form.qualification.errors %}<div class="form-error-text">{{ form.qualification.errors.0 }}</div>{% endif %}
+      </div>
+    </div>
+
+    <div class="form-row">
+      <div class="form-group">
+        <label for="{{ form.registration_number.id_for_label }}">License / Registration Number (Unique) *</label>
+        {{ form.registration_number }}
+        {% if form.registration_number.errors %}<div class="form-error-text">{{ form.registration_number.errors.0 }}</div>{% endif %}
+      </div>
+      <div class="form-group">
+        <label for="{{ form.experience_years.id_for_label }}">Clinical Experience (Years) *</label>
+        {{ form.experience_years }}
+        {% if form.experience_years.errors %}<div class="form-error-text">{{ form.experience_years.errors.0 }}</div>{% endif %}
+      </div>
+    </div>
+
+    <div class="form-group">
+      <label for="{{ form.consultation_fee.id_for_label }}">Consultation Fee ($) *</label>
+      {{ form.consultation_fee }}
+      {% if form.consultation_fee.errors %}<div class="form-error-text">{{ form.consultation_fee.errors.0 }}</div>{% endif %}
+    </div>
+
+    <h3 style="font-size:1.15rem; color:var(--slate-800); margin-top:24px; margin-bottom:14px; border-bottom:1px solid var(--slate-200); padding-bottom:6px;">
+      3. Hospital Consultation Availability & Working Hours
+    </h3>
+
+    <div class="form-group">
+      <label style="margin-bottom:8px;">Available Consultation Days *</label>
+      <div style="display:flex; gap:16px; flex-wrap:wrap; background:var(--slate-50); padding:14px; border-radius:var(--radius-sm); border:1px solid var(--slate-200);">
+        {{ form.available_days_list }}
+      </div>
+      {% if form.available_days_list.errors %}<div class="form-error-text">{{ form.available_days_list.errors.0 }}</div>{% endif %}
+    </div>
+
+    <div class="form-row">
+      <div class="form-group">
+        <label for="{{ form.work_start_time.id_for_label }}">Daily Start Time *</label>
+        {{ form.work_start_time }}
+        {% if form.work_start_time.errors %}<div class="form-error-text">{{ form.work_start_time.errors.0 }}</div>{% endif %}
+      </div>
+      <div class="form-group">
+        <label for="{{ form.work_end_time.id_for_label }}">Daily End Time *</label>
+        {{ form.work_end_time }}
+        {% if form.work_end_time.errors %}<div class="form-error-text">{{ form.work_end_time.errors.0 }}</div>{% endif %}
+      </div>
+    </div>
+
+    <div class="form-row">
+      <div class="form-group">
+        <label for="{{ form.slot_duration_minutes.id_for_label }}">Appointment Slot Duration (Minutes) *</label>
+        {{ form.slot_duration_minutes }}
+        {% if form.slot_duration_minutes.errors %}<div class="form-error-text">{{ form.slot_duration_minutes.errors.0 }}</div>{% endif %}
+      </div>
+      <div class="form-group" style="display:flex; align-items:center; gap:8px; margin-top:28px;">
+        {{ form.is_active }}
+        <label for="{{ form.is_active.id_for_label }}" style="margin-bottom:0; cursor:pointer;">
+          Active (Immediately open for patient bookings)
+        </label>
+      </div>
+    </div>
+
+    <div style="margin-top:28px; display:flex; justify-content:flex-end; gap:12px;">
+      <a href="{% url 'admin_doctor_list' %}" class="btn btn-outline">Cancel</a>
+      <button type="submit" class="btn btn-primary" style="padding:12px 24px;">
+        Create Doctor Profile & Account &rarr;
+      </button>
+    </div>
+  </form>
+</div>
+
+<script>
+document.addEventListener('DOMContentLoaded', function() {
+  const genBtn = document.getElementById('btn-generate-password');
+  const passInput = document.getElementById('{{ form.password.id_for_label }}');
+  const confirmInput = document.getElementById('{{ form.confirm_password.id_for_label }}');
+  const helpText = document.getElementById('password-help-text');
+
+  if (genBtn && passInput && confirmInput) {
+    genBtn.addEventListener('click', function() {
+      const chars = 'ABCDEFGHJKLMNPQRSTUVWXYZabcdefghijkmnpqrstuvwxyz23456789!@#$%&*';
+      let temp = 'Doc!';
+      for (let i = 0; i < 8; i++) {
+        temp += chars.charAt(Math.floor(Math.random() * chars.length));
+      }
+      passInput.type = 'text';
+      confirmInput.type = 'text';
+      passInput.value = temp;
+      confirmInput.value = temp;
+      if (helpText) {
+        helpText.innerHTML = '<span style="color:#059669; font-weight:700;">Generated temporary password: ' + temp + ' (Copied to both fields)</span>';
+      }
+    });
+  }
+});
+</script>
+{% endblock %}

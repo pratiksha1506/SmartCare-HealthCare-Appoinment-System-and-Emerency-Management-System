@@ -1,0 +1,127 @@
+{% extends 'base.html' %}
+{% load static %}
+
+{% block title %}{{ portal_title }} | {{ hospital_name }}{% endblock %}
+
+{% block content %}
+<div class="form-card" style="max-width: 480px; margin: 40px auto; background: #ffffff; border: 1px solid var(--slate-200); border-radius: var(--radius-lg); padding: 36px 32px; box-shadow: var(--shadow-md);">
+  
+  <div style="text-align: center; margin-bottom: 24px;">
+    {% if portal_role == 'patient' %}
+      <div style="display:inline-flex; align-items:center; justify-content:center; width:56px; height:56px; border-radius:50%; background:var(--primary-teal-light); color:var(--primary-teal-dark); font-size:1.8rem; margin-bottom:12px;">
+        👤
+      </div>
+    {% elif portal_role == 'doctor' %}
+      <div style="display:inline-flex; align-items:center; justify-content:center; width:56px; height:56px; border-radius:50%; background:var(--primary-blue-light); color:var(--primary-blue-dark); font-size:1.8rem; margin-bottom:12px;">
+        🩺
+      </div>
+    {% else %}
+      <div style="display:inline-flex; align-items:center; justify-content:center; width:56px; height:56px; border-radius:50%; background:#fef3c7; color:#92400e; font-size:1.8rem; margin-bottom:12px;">
+        🏥
+      </div>
+    {% endif %}
+
+    <span style="display:inline-block; font-size:0.8rem; font-weight:700; text-transform:uppercase; letter-spacing:0.5px; padding:3px 12px; border-radius:9999px; margin-bottom:8px;
+      {% if portal_role == 'patient' %}background:var(--primary-teal-light); color:var(--primary-teal-dark);
+      {% elif portal_role == 'doctor' %}background:var(--primary-blue-light); color:var(--primary-blue-dark);
+      {% else %}background:#fef3c7; color:#92400e;{% endif %}">
+      {{ portal_badge }}
+    </span>
+
+    <h1 style="font-size: 1.6rem; font-weight: 800; color: var(--slate-900); margin: 6px 0;">
+      {{ portal_title }}
+    </h1>
+    <p style="font-size: 0.92rem; color: var(--slate-600); margin-top: 4px; line-height: 1.45;">
+      {{ portal_description }}
+    </p>
+  </div>
+
+  <form method="POST" novalidate>
+    {% csrf_token %}
+
+    {% if form.non_field_errors %}
+      <div class="alert alert-error" style="margin-bottom: 20px; font-size: 0.9rem;">
+        {{ form.non_field_errors.0 }}
+      </div>
+    {% endif %}
+
+    <div class="form-group" style="margin-bottom: 18px;">
+      <label for="{{ form.email.id_for_label }}" style="display:block; font-weight:600; font-size:0.9rem; color:var(--slate-800); margin-bottom:6px;">
+        Email Address
+      </label>
+      {{ form.email }}
+      {% if form.email.errors %}
+        <div class="form-error-text" style="color:var(--priority-1-critical); font-size:0.82rem; margin-top:4px;">
+          {{ form.email.errors.0 }}
+        </div>
+      {% endif %}
+    </div>
+
+    <div class="form-group" style="margin-bottom: 22px;">
+      <label for="{{ form.password.id_for_label }}" style="display:block; font-weight:600; font-size:0.9rem; color:var(--slate-800); margin-bottom:6px;">
+        Password
+      </label>
+      {{ form.password }}
+      {% if form.password.errors %}
+        <div class="form-error-text" style="color:var(--priority-1-critical); font-size:0.82rem; margin-top:4px;">
+          {{ form.password.errors.0 }}
+        </div>
+      {% endif %}
+    </div>
+
+    <button type="submit" class="btn {% if portal_role == 'doctor' %}btn-secondary{% elif portal_role == 'admin' %}btn-primary{% else %}btn-primary{% endif %}" style="width:100%; padding:12px; font-size:1.05rem; font-weight:700;">
+      {% if portal_role == 'patient' %}
+        LOGIN AS PATIENT &rarr;
+      {% elif portal_role == 'doctor' %}
+        LOGIN AS DOCTOR &rarr;
+      {% else %}
+        LOGIN AS ADMINISTRATOR &rarr;
+      {% endif %}
+    </button>
+  </form>
+
+  <!-- Portal specific footnotes & switch options -->
+  <div style="margin-top: 24px; padding-top: 20px; border-top: 1px solid var(--slate-200); font-size: 0.88rem;">
+    {% if portal_role == 'patient' %}
+      <div style="text-align:center; margin-bottom:16px;">
+        <span style="color:var(--slate-600);">New patient to {{ hospital_name }}?</span><br>
+        <a href="{% url 'patient_register' %}" class="btn btn-outline btn-sm" style="margin-top:8px; font-weight:700; color:var(--primary-teal);">
+          + Register as Patient
+        </a>
+      </div>
+      <div style="background:var(--slate-50); border-radius:var(--radius-sm); padding:10px 14px; text-align:center; color:var(--slate-600); font-size:0.82rem;">
+        Staff Member? 
+        <a href="{% url 'doctor_login' %}" style="color:var(--primary-blue); font-weight:600;">Doctor Login</a> &bull; 
+        <a href="{% url 'admin_login' %}" style="color:var(--slate-700); font-weight:600;">Administrator Login</a>
+      </div>
+    
+    {% elif portal_role == 'doctor' %}
+      <div style="background:var(--slate-50); border:1px solid var(--slate-200); border-radius:var(--radius-sm); padding:12px; margin-bottom:16px; font-size:0.82rem; color:var(--slate-600);">
+        <strong>📌 Clinical Staff Advisory:</strong> Doctor accounts are created and provisioned directly by the Hospital Administrator. Public self-registration is disabled. If you require credentials or a password reset, please contact the administration desk.
+      </div>
+      <div style="text-align:center; color:var(--slate-600); font-size:0.82rem;">
+        Not a doctor? 
+        <a href="{% url 'patient_login' %}" style="color:var(--primary-teal); font-weight:600;">Patient Login</a> &bull; 
+        <a href="{% url 'admin_login' %}" style="color:var(--slate-700); font-weight:600;">Administrator Login</a>
+      </div>
+
+    {% else %}
+      <div style="background:var(--slate-50); border:1px solid var(--slate-200); border-radius:var(--radius-sm); padding:12px; margin-bottom:16px; font-size:0.82rem; color:var(--slate-600);">
+        <strong>🛡️ Administrative Control:</strong> This portal is strictly restricted to authorized {{ hospital_name }} administration personnel.
+      </div>
+      <div style="text-align:center; color:var(--slate-600); font-size:0.82rem;">
+        Looking for clinical or patient access? 
+        <a href="{% url 'patient_login' %}" style="color:var(--primary-teal); font-weight:600;">Patient Login</a> &bull; 
+        <a href="{% url 'doctor_login' %}" style="color:var(--primary-blue); font-weight:600;">Doctor Login</a>
+      </div>
+    {% endif %}
+
+    <div style="text-align:center; margin-top:16px;">
+      <a href="{% url 'home' %}" style="color:var(--slate-500); font-size:0.82rem; text-decoration:none;">
+        &larr; Return to SmartCare Homepage
+      </a>
+    </div>
+  </div>
+
+</div>
+{% endblock %}

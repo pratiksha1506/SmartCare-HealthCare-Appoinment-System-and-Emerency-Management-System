@@ -1,0 +1,163 @@
+{% load static %}
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>{% block title %}{{ DEFAULT_HOSPITAL_NAME }} | SmartCare Portal{% endblock %}</title>
+  
+  <!-- CSS Stylesheets -->
+  <link rel="stylesheet" href="{% static 'css/style.css' %}">
+  <link rel="stylesheet" href="{% static 'css/dashboard.css' %}">
+  <link rel="stylesheet" href="{% static 'css/forms.css' %}">
+  {% block extra_css %}{% endblock %}
+</head>
+<body>
+
+  <!-- Top Emergency Warning & Triage Bar -->
+  <div class="emergency-top-bar">
+    <div>
+      <span>⚠️ Acute Medical Emergency?</span>
+      <strong>Do not wait for a routine appointment.</strong>
+      <a href="{% url 'emergency_advisory' %}">Emergency Assistance & Guidance &rarr;</a>
+    </div>
+    <div>
+      <span class="emergency-call">24/7 HOTLINE: +91 8932643310</span>
+    </div>
+  </div>
+
+  <!-- Main Navigation Header -->
+  <header>
+    <div class="navbar">
+      <a href="{% url 'home' %}" class="brand">
+        <span class="brand-icon">⚕️</span>
+        <div>
+          <span>{{ APP_NAME }}</span>
+          <span style="display:block; font-size:0.72rem; font-weight:500; color:var(--slate-500); line-height:1;">
+            SmartCare – Healthcare Appointment & Emergency Management
+          </span>
+        </div>
+      </a>
+
+      <nav>
+        <ul class="nav-links">
+          <li><a href="{% url 'find_doctors' %}">🔍 Find Specialists</a></li>
+          <li><a href="{% url 'emergency_advisory' %}" style="color:#dc2626; font-weight:700;">🚨 Emergency</a></li>
+          
+          {% if user.is_authenticated %}
+            {% if user.is_patient %}
+              <li><a href="{% url 'patient_dashboard' %}">📋 My Appointments</a></li>
+            {% elif user.is_doctor %}
+              <li><a href="{% url 'doctor_dashboard' %}">🩺 My Consultations</a></li>
+              <li><a href="{% url 'doctor_availability' %}">⏰ My Availability</a></li>
+            {% endif %}
+
+            {% if is_hospital_admin %}
+              <li><a href="{% url 'admin_doctor_list' %}">👨‍⚕️ Doctors</a></li>
+              <li><a href="{% url 'admin_doctor_create' %}" class="btn btn-sm btn-primary" style="padding:4px 10px; font-size:0.82rem;">+ Add Doctor</a></li>
+              <li><a href="{% url 'admin_patient_list' %}">👥 Patients</a></li>
+              <li><a href="{% url 'admin_appointment_list' %}">📋 Appointments</a></li>
+            {% endif %}
+
+            {% if is_clinical_staff %}
+              <li><a href="{% url 'emergency_queue_dashboard' %}" class="nav-badge-emergency">🚨 Emergency Queue</a></li>
+            {% endif %}
+
+            <li>
+              <span class="user-nav-badge">
+                {{ user.get_full_name|default:user.username }} 
+                {% if user.is_doctor %}(Doctor)
+                {% elif is_hospital_admin %}(Hospital Admin)
+                {% elif is_clinical_staff %}(Clinical Staff)
+                {% else %}(Patient){% endif %}
+              </span>
+            </li>
+            <li><a href="{% url 'logout' %}" class="btn btn-sm btn-outline">Sign Out</a></li>
+          {% else %}
+            <li><a href="{% url 'patient_login' %}">👤Patient Login</a></li>
+            <li><a href="{% url 'doctor_login' %}">🩺Doctor Login</a></li>
+            <li><a href="{% url 'admin_login' %}">🏥Admin Login</a></li>
+            <li><a href="{% url 'patient_register' %}" class="btn btn-sm btn-primary">Register as Patient</a></li>
+          {% endif %}
+        </ul>
+      </nav>
+    </div>
+  </header>
+
+  <!-- Global Notification Messages -->
+  {% if messages %}
+    <div class="messages-container">
+      {% for message in messages %}
+        <div class="alert alert-{{ message.tags|default:'info' }}">
+          <span>{{ message }}</span>
+          <button type="button" class="alert-close" style="background:none;border:none;cursor:pointer;font-size:1.1rem;font-weight:bold;">&times;</button>
+        </div>
+      {% endfor %}
+    </div>
+  {% endif %}
+
+  <!-- Main Content Area -->
+  <main>
+    <div class="container">
+      {% block content %}{% endblock %}
+    </div>
+  </main>
+
+  <!-- Footer -->
+  <footer>
+    <div class="footer-container">
+      <div class="footer-col">
+        <h4>{{ DEFAULT_HOSPITAL_NAME }}</h4>
+        <p style="color:var(--slate-400); font-size:0.88rem; line-height:1.5;">
+          📍 Near Shridevi College,Lingapura,Tumkuru<br>
+          📞 General Enquiries: 121<br>
+          🚨 Emergency Department: SmartCare Emergency, Gate 2
+        </p>
+        <p style="margin-top:10px; font-size:0.8rem; color:var(--primary-teal-light);">
+          Single Hospital Healthcare System &bull; Routing: <strong>{{ ROUTING_PROVIDER|upper }}</strong>
+        </p>
+      </div>
+
+      <div class="footer-col">
+        <h4>Patient Services</h4>
+        <ul>
+          <li><a href="{% url 'find_doctors' %}">Doctor Directory</a></li>
+          <li><a href="{% url 'emergency_advisory' %}">Emergency Assistance</a></li>
+          <li><a href="{% url 'patient_register' %}">Register Patient Account</a></li>
+          <li><a href="{% url 'login' %}">Patient Sign In</a></li>
+        </ul>
+      </div>
+
+      <div class="footer-col">
+        <h4>Staff & Hospital Access</h4>
+        <ul>
+          <li><a href="{% url 'login' %}">Clinician & Staff Sign In</a></li>
+          {% if is_hospital_admin %}
+            <li><a href="{% url 'admin_doctor_list' %}">Doctor Onboarding & Roster</a></li>
+          {% endif %}
+          {% if is_clinical_staff %}
+            <li><a href="{% url 'emergency_queue_dashboard' %}">Emergency Triage Queue</a></li>
+          {% endif %}
+        </ul>
+      </div>
+
+      <div class="footer-col">
+        <h4>Clinical Safety Notice</h4>
+        <p style="font-size:0.82rem; color:var(--slate-400); line-height:1.4;">
+          SmartCare assists routine scheduling and departure estimates. It does NOT diagnose conditions or autonomously determine emergency medical priority. Patients experiencing acute life threats must contact emergency services or proceed immediately to the emergency department.
+        </p>
+      </div>
+    </div>
+
+    <div class="footer-bottom">
+      &copy; 2026 {{ DEFAULT_HOSPITAL_NAME }}. All medical and triage operations adhere to standardized clinical protocols.
+    </div>
+  </footer>
+
+  <!-- Core JavaScript Scripts -->
+  <script src="{% static 'js/main.js' %}"></script>
+  <script src="{% static 'js/location.js' %}"></script>
+  <script src="{% static 'js/travel_estimates.js' %}"></script>
+  {% block extra_js %}{% endblock %}
+</body>
+</html>

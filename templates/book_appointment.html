@@ -1,0 +1,248 @@
+{% extends 'base.html' %}
+{% load static %}
+
+{% block title %}Book Consultation with Dr. {{ doctor.user.get_full_name }} | {{ hospital_name }}{% endblock %}
+
+{% block content %}
+<div class="dashboard-header">
+  <div>
+    <h1>Book Medical Appointment</h1>
+    <p class="dashboard-subtitle">
+      {{ hospital_name }} &bull; Outpatient Consultation Scheduling
+    </p>
+  </div>
+  <a href="{% url 'find_doctors' %}" class="btn btn-outline btn-sm">&larr; Back to Doctor Directory</a>
+</div>
+
+<div style="display:grid; grid-template-columns: 1fr 1.6fr; gap:28px; align-items:start;">
+  
+  <!-- Left Column: Doctor Profile Card -->
+  <div class="card">
+    <div style="text-align:center; padding-bottom:18px; border-bottom:1px solid var(--slate-200); margin-bottom:18px;">
+      <span style="font-size:3rem;">👨‍⚕️</span>
+      <h2 style="font-size:1.35rem; color:var(--slate-900); margin-top:8px;">Dr. {{ doctor.user.get_full_name }}</h2>
+      <span style="font-size:0.85rem; font-weight:700; color:var(--primary-teal); background:var(--primary-teal-light); padding:3px 10px; border-radius:9999px;">
+        {{ doctor.specialization }}
+      </span>
+    </div>
+
+    <div style="font-size:0.9rem; color:var(--slate-700); line-height:1.6;">
+      <p style="margin-bottom:8px;"><strong>Qualifications:</strong> {{ doctor.qualification }}</p>
+      <p style="margin-bottom:8px;"><strong>Registration Number:</strong> {{ doctor.registration_number }}</p>
+      <p style="margin-bottom:8px;"><strong>Clinical Experience:</strong> {{ doctor.experience_years }} years</p>
+      <p style="margin-bottom:8px;"><strong>Consultation Fee:</strong> ${{ doctor.consultation_fee }}</p>
+      <p style="margin-bottom:8px;"><strong>Hospital:</strong> {{ hospital_name }}</p>
+      <p style="font-size:0.85rem; color:var(--slate-500); margin-bottom:16px;">📍 {{ hospital_address }}</p>
+    </div>
+
+    <div style="background:var(--slate-50); padding:12px; border-radius:var(--radius-sm); font-size:0.85rem; color:var(--slate-700);">
+      ⏱️ <strong>Slot Duration:</strong> {{ doctor.slot_duration_minutes }} minutes<br>
+      📅 <strong>Consultation Schedule:</strong> {{ doctor.availability_summary }}<br>
+      🗓️ <strong>Working Days:</strong> {{ doctor.available_days }}
+    </div>
+
+    <!-- Hidden metadata for JavaScript route calculations -->
+    <input type="hidden" id="booking-meta-doctor-id" value="{{ doctor.id }}">
+    <input type="hidden" id="booking-meta-dest-lat" value="{{ hospital_lat }}">
+    <input type="hidden" id="booking-meta-dest-lng" value="{{ hospital_lng }}">
+    <input type="hidden" id="booking-meta-dest-name" value="{{ hospital_name }}">
+  </div>
+
+  <!-- Right Column: Booking Form -->
+  <div class="card">
+    <h3 style="font-size:1.3rem; margin-bottom:16px; color:var(--slate-900);">Appointment Triage & Details</h3>
+
+    <form method="POST" id="appointment-booking-form" novalidate>
+      {% csrf_token %}
+
+      {% if form.non_field_errors %}
+        <div class="alert alert-error">
+          {{ form.non_field_errors.0 }}
+        </div>
+      {% endif %}
+
+      <!-- Mandatory Triage Question (Requirement 6) -->
+      <div style="background:var(--slate-50); border:1px solid var(--slate-300); border-radius:var(--radius-md); padding:18px; margin-bottom:20px;">
+        <label style="font-weight:700; color:var(--slate-900); font-size:1.02rem; margin-bottom:10px; display:block;">
+          Are you seeking a routine consultation or emergency medical assistance? *
+        </label>
+        
+        <div style="display:flex; flex-direction:column; gap:10px;">
+          <label style="display:flex; align-items:center; gap:8px; cursor:pointer; font-weight:600; color:var(--slate-800);">
+            <input type="radio" name="triage_intent" value="routine" id="intent_routine" checked onchange="handleIntentChange()">
+            Routine consultation (Book an outpatient appointment with Dr. {{ doctor.user.get_full_name }})
+          </label>
+          <label style="display:flex; align-items:center; gap:8px; cursor:pointer; font-weight:700; color:#b91c1c;">
+            <input type="radio" name="triage_intent" value="emergency" id="intent_emergency" onchange="handleIntentChange()">
+            Emergency medical assistance (I am experiencing an acute medical emergency)
+          </label>
+        </div>
+      </div>
+
+      <!-- Emergency Warning Box (Revealed if emergency is selected) -->
+      <div id="emergency-alert-panel" style="display:none; background:#fef2f2; border:2px solid #ef4444; border-radius:var(--radius-md); padding:20px; margin-bottom:24px;">
+        <h4 style="color:#b91c1c; font-size:1.2rem; margin-bottom:8px; display:flex; align-items:center; gap:8px;">
+          🚨 STOP: DO NOT WAIT FOR A ROUTINE APPOINTMENT
+        </h4>
+        <p style="color:#991b1b; font-size:0.95rem; line-height:1.5; margin-bottom:12px;">
+          If you have severe, acute or life-threatening symptoms (such as chest pain, breathing difficulty, sudden numbness, or heavy trauma), 
+          <strong>call emergency services (911 / 112) immediately</strong> or proceed directly to the {{ hospital_name }} Emergency Department.
+        </p>
+        <div style="background:#ffffff; border-radius:var(--radius-sm); padding:12px; margin-bottom:14px; font-size:0.9rem; color:#991b1b;">
+          📞 <strong>Hospital Emergency Desk:</strong> {{ emergency_hotline }}<br>
+          📍 <strong>Direct Entrance:</strong> {{ emergency_department }} ({{ hospital_address }})
+        </div>
+        <a href="{% url 'emergency_advisory' %}" class="btn btn-danger" style="width:100%; text-align:center;">
+          Open Emergency Assistance & Triage Advisory &rarr;
+        </a>
+      </div>
+
+      <!-- Routine Booking Fields (Feature 5) -->
+      <div id="routine-fields-container">
+        <div class="form-group">
+          <label for="{{ form.consultation_reason.id_for_label }}">Reason for Consultation *</label>
+          {{ form.consultation_reason }}
+          <div class="form-help-text">Assists in guiding you to the right department. Does not replace professional clinical evaluation.</div>
+          {% if form.consultation_reason.errors %}<div class="form-error-text">{{ form.consultation_reason.errors.0 }}</div>{% endif %}
+        </div>
+
+        <div class="form-group">
+          <label for="{{ form.symptoms_description.id_for_label }}">Short Description of Presenting Symptoms (Optional)</label>
+          {{ form.symptoms_description }}
+          {% if form.symptoms_description.errors %}<div class="form-error-text">{{ form.symptoms_description.errors.0 }}</div>{% endif %}
+        </div>
+
+        <div class="form-row">
+          <div class="form-group">
+            <label for="{{ form.appointment_date.id_for_label }}">Select Consultation Date *</label>
+            {{ form.appointment_date }}
+            {% if form.appointment_date.errors %}<div class="form-error-text">{{ form.appointment_date.errors.0 }}</div>{% endif %}
+          </div>
+
+          <div class="form-group">
+            <label for="{{ form.appointment_time.id_for_label }}">Available Time Slot *</label>
+            {{ form.appointment_time }}
+            {% if form.appointment_time.errors %}<div class="form-error-text">{{ form.appointment_time.errors.0 }}</div>{% endif %}
+          </div>
+        </div>
+
+        <hr style="border:none; border-top:1px solid var(--slate-200); margin:20px 0;">
+
+        <!-- Starting Location & Travel Calculation -->
+        <div class="form-group">
+          <label>Starting Location for Travel Timing</label>
+          <div class="location-input-box">
+            <div style="display:flex; justify-content:space-between; align-items:center; flex-wrap:wrap; gap:10px; margin-bottom:10px;">
+              <span style="font-size:0.88rem; font-weight:600; color:var(--slate-700);">Choose starting point:</span>
+              <button type="button" id="btn-use-current-location" class="btn btn-sm btn-outline" style="border-color:var(--primary-teal); color:var(--primary-teal);">
+                📍 Use My Current Location
+              </button>
+            </div>
+
+            {{ form.patient_origin_address }}
+            {{ form.patient_origin_lat }}
+            {{ form.patient_origin_lng }}
+
+            <div id="location-status-message" class="location-status">
+              Tip: Click "Use My Current Location" or type your starting street address to calculate transit time to {{ hospital_name }}.
+            </div>
+          </div>
+        </div>
+
+        <div class="form-row">
+          <div class="form-group">
+            <label for="{{ form.safety_buffer_minutes.id_for_label }}">Safety Buffer *</label>
+            {{ form.safety_buffer_minutes }}
+            <div class="form-help-text">Added prior to appointment time for check-in and transit buffers.</div>
+          </div>
+
+          <div class="form-group">
+            <label>Destination Hospital</label>
+            <input type="text" class="form-control" value="{{ hospital_name }}" readonly style="background:var(--slate-100); color:var(--slate-600);">
+          </div>
+        </div>
+
+        <!-- Departure Time Preview Box -->
+        <div id="departure-preview-box" style="display:none; background:linear-gradient(135deg, #f0fdfa, #eff6ff); border:1px solid #99f6e4; border-radius:var(--radius-md); padding:16px; margin:20px 0;">
+          <h4 style="font-size:1rem; color:var(--primary-teal-dark); margin-bottom:8px; display:flex; align-items:center; gap:6px;">
+            ⏱️ Calculated Departure Preview
+          </h4>
+          <div style="display:grid; grid-template-columns:repeat(auto-fit, minmax(130px, 1fr)); gap:12px; margin-top:8px;">
+            <div>
+              <div style="font-size:0.75rem; color:var(--slate-500); text-transform:uppercase;">Recommended Departure</div>
+              <div id="prev-departure-time" style="font-size:1.15rem; font-weight:800; color:var(--primary-teal-dark);">--</div>
+            </div>
+            <div>
+              <div style="font-size:0.75rem; color:var(--slate-500); text-transform:uppercase;">Estimated Travel</div>
+              <div id="prev-travel-time" style="font-size:1.15rem; font-weight:700; color:var(--slate-800);">--</div>
+            </div>
+            <div>
+              <div style="font-size:0.75rem; color:var(--slate-500); text-transform:uppercase;">Estimated Arrival</div>
+              <div id="prev-arrival-time" style="font-size:1.15rem; font-weight:700; color:var(--slate-800);">--</div>
+            </div>
+            <div>
+              <div style="font-size:0.75rem; color:var(--slate-500); text-transform:uppercase;">Safety Buffer</div>
+              <div id="prev-buffer" style="font-size:1.15rem; font-weight:700; color:var(--primary-blue);">--</div>
+            </div>
+          </div>
+          <div id="prev-routing-note" style="font-size:0.78rem; color:var(--slate-500); margin-top:10px;"></div>
+        </div>
+
+        <div style="margin-top:24px;">
+          <button type="submit" id="btn-submit-booking" class="btn btn-primary" style="width:100%; padding:14px; font-size:1.05rem;">
+            Confirm & Book Consultation &rarr;
+          </button>
+        </div>
+      </div>
+    </form>
+  </div>
+</div>
+
+<!-- Location Consent Modal -->
+<div id="location-consent-modal" class="modal-overlay">
+  <div class="modal-content">
+    <div class="modal-header">
+      <h3>📍 Location Permission Request</h3>
+      <button type="button" class="modal-close-btn" data-modal-close>&times;</button>
+    </div>
+    <div style="font-size:0.95rem; color:var(--slate-700); line-height:1.6; margin-bottom:20px;">
+      <p style="margin-bottom:12px;">
+        <strong>Why is your location needed?</strong><br>
+        SmartCare uses your coordinates exclusively to compute estimated travel duration to {{ hospital_name }}, allowing us to recommend an accurate departure time.
+      </p>
+      <p style="font-size:0.85rem; color:var(--slate-500); background:var(--slate-50); padding:10px; border-radius:var(--radius-sm);">
+        🔒 <strong>Your Privacy:</strong> We do not track your location continuously. Your precise coordinates are never shared with doctors or third parties.
+      </p>
+    </div>
+    <div style="display:flex; justify-content:flex-end; gap:12px;">
+      <button type="button" id="btn-decline-location-consent" class="btn btn-outline">
+        Decline & Enter Manually
+      </button>
+      <button type="button" id="btn-confirm-location-consent" class="btn btn-primary">
+        Allow Location Access
+      </button>
+    </div>
+  </div>
+</div>
+{% endblock %}
+
+{% block extra_js %}
+<script src="{% static 'js/appointments.js' %}"></script>
+<script>
+function handleIntentChange() {
+  const isEmergency = document.getElementById('intent_emergency').checked;
+  const alertPanel = document.getElementById('emergency-alert-panel');
+  const routineFields = document.getElementById('routine-fields-container');
+  
+  if (isEmergency) {
+    alertPanel.style.display = 'block';
+    routineFields.style.opacity = '0.3';
+    routineFields.style.pointerEvents = 'none';
+  } else {
+    alertPanel.style.display = 'none';
+    routineFields.style.opacity = '1';
+    routineFields.style.pointerEvents = 'auto';
+  }
+}
+</script>
+{% endblock %}

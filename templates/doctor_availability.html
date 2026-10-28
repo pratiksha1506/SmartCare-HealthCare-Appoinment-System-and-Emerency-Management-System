@@ -1,0 +1,65 @@
+{% extends 'base.html' %}
+{% load static %}
+
+{% block title %}Manage Availability | Dr. {{ doctor.user.get_full_name }}{% endblock %}
+
+{% block content %}
+<div class="dashboard-header">
+  <div>
+    <h1>Consultation Availability Schedule</h1>
+    <p class="dashboard-subtitle">
+      Dr. {{ doctor.user.get_full_name }} &bull; {{ doctor.specialization }} &bull; {{ DEFAULT_HOSPITAL_NAME }}
+    </p>
+  </div>
+  <a href="{% url 'doctor_dashboard' %}" class="btn btn-outline btn-sm">&larr; Back to My Consultations</a>
+</div>
+
+<div class="form-card">
+  <form method="POST" novalidate>
+    {% csrf_token %}
+
+    <div class="form-group">
+      <label style="margin-bottom:8px;">Consultation Days</label>
+      <div style="display:flex; gap:16px; flex-wrap:wrap; background:var(--slate-50); padding:14px; border-radius:var(--radius-sm); border:1px solid var(--slate-200);">
+        {{ form.available_days_list }}
+      </div>
+      <div class="form-help-text">Patients can only book appointments on your designated working days.</div>
+      {% if form.available_days_list.errors %}<div class="form-error-text">{{ form.available_days_list.errors.0 }}</div>{% endif %}
+    </div>
+
+    <div class="form-row">
+      <div class="form-group">
+        <label for="{{ form.work_start_time.id_for_label }}">Daily Start Time</label>
+        {{ form.work_start_time }}
+        {% if form.work_start_time.errors %}<div class="form-error-text">{{ form.work_start_time.errors.0 }}</div>{% endif %}
+      </div>
+      <div class="form-group">
+        <label for="{{ form.work_end_time.id_for_label }}">Daily End Time</label>
+        {{ form.work_end_time }}
+        {% if form.work_end_time.errors %}<div class="form-error-text">{{ form.work_end_time.errors.0 }}</div>{% endif %}
+      </div>
+    </div>
+
+    <div class="form-row">
+      <div class="form-group">
+        <label for="{{ form.slot_duration_minutes.id_for_label }}">Consultation Slot Interval (Minutes)</label>
+        {{ form.slot_duration_minutes }}
+        {% if form.slot_duration_minutes.errors %}<div class="form-error-text">{{ form.slot_duration_minutes.errors.0 }}</div>{% endif %}
+      </div>
+      <div class="form-group" style="display:flex; align-items:center; gap:8px; margin-top:28px;">
+        {{ form.is_active }}
+        <label for="{{ form.is_active.id_for_label }}" style="margin-bottom:0; cursor:pointer;">
+          Accepting New Appointments
+        </label>
+      </div>
+    </div>
+
+    <div style="margin-top:24px; display:flex; justify-content:flex-end; gap:12px;">
+      <a href="{% url 'doctor_dashboard' %}" class="btn btn-outline">Cancel</a>
+      <button type="submit" class="btn btn-primary">
+        Save Availability Schedule
+      </button>
+    </div>
+  </form>
+</div>
+{% endblock %}

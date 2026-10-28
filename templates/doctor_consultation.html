@@ -1,0 +1,249 @@
+{% extends 'base.html' %}
+{% load static %}
+
+{% block title %}Patient Consultation - {{ patient.user.get_full_name }} | {{ doctor }} | SmartCare{% endblock %}
+
+{% block content %}
+<div class="dashboard-header" style="margin-bottom: 24px;">
+  <div>
+    <a href="{% url 'doctor_dashboard' %}" style="color:var(--primary-teal); text-decoration:none; font-size:0.9rem; font-weight:600;">
+      &larr; Back to Doctor Dashboard
+    </a>
+    <h1 style="font-size: 1.8rem; color: var(--slate-900); margin-top: 8px; font-weight: 800;">
+      Clinical Consultation: {{ patient.user.get_full_name|default:patient.user.username }}
+    </h1>
+    <p class="dashboard-subtitle">
+      Appointment #APT-{{ appointment.id }} &bull; {{ appointment.appointment_date|date:"F d, Y" }} at {{ appointment.appointment_time|time:"h:i A" }}
+    </p>
+  </div>
+
+  <div style="display:flex; gap:12px; align-items:center;">
+    {% if appointment.status == 'SCHEDULED' or appointment.status == 'CHECKED_IN' %}
+      <form method="POST" style="margin:0;">
+        {% csrf_token %}
+        <input type="hidden" name="action" value="start_consultation">
+        <button type="submit" class="btn btn-primary" style="background:#0d9488; border-color:#0d9488; font-weight:600;">
+          ▶ Start Consultation
+        </button>
+      </form>
+    {% endif %}
+
+    {% if appointment.status == 'IN_CONSULTATION' %}
+      <span class="badge-status" style="background:#dbeafe; color:#1e40af; font-size:0.95rem; padding:8px 16px;">
+        🔵 In Consultation
+      </span>
+    {% elif appointment.status == 'COMPLETED' %}
+      <span class="badge-status status-confirmed" style="font-size:0.95rem; padding:8px 16px;">
+        ✓ Consultation Completed
+      </span>
+    {% endif %}
+  </div>
+</div>
+
+<div style="display:grid; grid-template-columns: 1fr 2fr; gap: 24px; align-items: start;">
+
+  <!-- Left Column: Patient Profile, Visit Context & Medical History -->
+  <div>
+    <!-- Patient Demographic Card -->
+    <div class="card" style="margin-bottom: 20px;">
+      <h3 style="font-size:1.1rem; color:var(--slate-900); border-bottom:1px solid var(--slate-100); padding-bottom:10px; margin-bottom:14px;">
+        👤 Patient Demographics
+      </h3>
+      <div style="font-size:0.9rem; line-height:1.7; color:var(--slate-700);">
+        <div><strong>Name:</strong> {{ patient.user.get_full_name|default:patient.user.username }}</div>
+        <div><strong>Email:</strong> {{ patient.user.email }}</div>
+        <div><strong>Contact:</strong> {{ patient.user.contact_number|default:"Not provided" }}</div>
+        <div><strong>Gender:</strong> {{ patient.gender|title }}</div>
+        <div>
+          <strong>Date of Birth:</strong> 
+          {% if patient.date_of_birth %}
+            {{ patient.date_of_birth|date:"M d, Y" }}
+          {% else %}
+            Not recorded
+          {% endif %}
+        </div>
+        {% if patient.default_address %}
+          <div><strong>Address:</strong> {{ patient.default_address }}</div>
+        {% endif %}
+      </div>
+    </div>
+
+    <!-- Presenting Concern & Reported Symptoms -->
+    <div class="card" style="margin-bottom: 20px; background:#f8fafc; border:1px solid #e2e8f0;">
+      <h3 style="font-size:1.05rem; color:var(--slate-900); margin-bottom:10px;">
+        🩺 Presenting Health Concern
+      </h3>
+      <div style="font-size:0.9rem; color:var(--slate-800); margin-bottom:10px;">
+        <span style="font-weight:700; color:var(--primary-teal);">{{ appointment.get_consultation_reason_display }}</span>
+      </div>
+      <label class="form-label" style="font-size:0.8rem; color:var(--slate-500); margin-bottom:4px;">Patient's Description of Symptoms:</label>
+      <div style="font-size:0.88rem; background:white; padding:12px; border-radius:8px; border:1px solid var(--slate-200); color:var(--slate-700); min-height:50px;">
+        {{ appointment.symptoms_description|default:appointment.health_concern|default:"No detailed symptoms entered." }}
+      </div>
+    </div>
+
+    <!-- Past Consultation Records (History) -->
+    <div class="card">
+      <h3 style="font-size:1.05rem; color:var(--slate-900); margin-bottom:12px;">
+        📁 Previous Consultations ({{ past_consultations|length }})
+      </h3>
+      {% if past_consultations %}
+        <div style="display:flex; flex-direction:column; gap:12px; max-height:400px; overflow-y:auto;">
+          {% for past in past_consultations %}
+            <div style="background:#f8fafc; border:1px solid var(--slate-200); border-radius:8px; padding:12px;">
+              <div style="display:flex; justify-content:space-between; margin-bottom:4px;">
+                <strong style="font-size:0.85rem; color:var(--slate-800);">{{ past.created_at|date:"M d, Y" }}</strong>
+                <span style="font-size:0.78rem; color:var(--slate-500);">Dr. {{ past.doctor.user.get_full_name }}</span>
+              </div>
+              {% if past.diagnosis %}
+                <div style="font-size:0.82rem; color:var(--slate-700); margin-bottom:4px;">
+                  <strong>Diagnosis:</strong> {{ past.diagnosis }}
+                </div>
+              {% endif %}
+              {% if past.prescribed_medications %}
+                <div style="font-size:0.78rem; color:var(--slate-600); background:white; padding:6px; border-radius:4px; border:1px solid #e2e8f0;">
+                  <strong>Rx:</strong> {{ past.prescribed_medications|truncatewords:15 }}
+                </div>
+              {% endif %}
+            </div>
+          {% endfor %}
+        </div>
+      {% else %}
+        <p style="font-size:0.85rem; color:var(--slate-500); margin:0;">
+          No previous consultation records on file for this patient at {{ hospital_name }}.
+        </p>
+      {% endif %}
+    </div>
+  </div>
+
+  <!-- Right Column: Active Consultation Record Form -->
+  <div class="card" style="box-shadow: 0 4px 6px -1px rgba(0,0,0,0.05), 0 2px 4px -2px rgba(0,0,0,0.05);">
+    <div style="border-bottom: 1px solid var(--slate-200); padding-bottom: 14px; margin-bottom: 20px;">
+      <h2 style="font-size:1.35rem; color:var(--slate-900); font-weight:700; margin:0;">
+        Clinical Assessment & Documentation
+      </h2>
+      <p style="font-size:0.85rem; color:var(--slate-500); margin-top:4px;">
+        Document examination findings, clinical diagnosis, treatment regimen, and prescribed medications.
+      </p>
+    </div>
+
+    <form method="POST" novalidate>
+      {% csrf_token %}
+
+      {% if form.non_field_errors %}
+        <div class="alert alert-error" style="margin-bottom:16px;">
+          {% for error in form.non_field_errors %}<p>{{ error }}</p>{% endfor %}
+        </div>
+      {% endif %}
+
+      <!-- Patient Medical History (Background) -->
+      <div class="form-group" style="margin-bottom: 18px;">
+        <label class="form-label" style="font-weight:600;">
+          {{ form.patient_medical_history.label }}
+        </label>
+        {{ form.patient_medical_history }}
+        <div style="font-size:0.78rem; color:var(--slate-500); margin-top:3px;">
+          Chronic illnesses (hypertension, diabetes), drug allergies, past surgical history. This is saved to the patient's ongoing medical record.
+        </div>
+        {% if form.patient_medical_history.errors %}
+          <div class="form-error">{{ form.patient_medical_history.errors.0 }}</div>
+        {% endif %}
+      </div>
+
+      <!-- Clinical Notes & Objective Findings -->
+      <div class="form-group" style="margin-bottom: 18px;">
+        <label class="form-label" style="font-weight:600;">
+          {{ form.clinical_notes.label }}
+        </label>
+        {{ form.clinical_notes }}
+        {% if form.clinical_notes.errors %}
+          <div class="form-error">{{ form.clinical_notes.errors.0 }}</div>
+        {% endif %}
+      </div>
+
+      <!-- Diagnosis (Required) -->
+      <div class="form-group" style="margin-bottom: 18px;">
+        <label class="form-label" style="font-weight:700; color:#0f766e;">
+          {{ form.diagnosis.label }} *
+        </label>
+        {{ form.diagnosis }}
+        {% if form.diagnosis.errors %}
+          <div class="form-error">{{ form.diagnosis.errors.0 }}</div>
+        {% endif %}
+      </div>
+
+      <!-- Treatment Plan -->
+      <div class="form-group" style="margin-bottom: 18px;">
+        <label class="form-label" style="font-weight:600;">
+          {{ form.treatment_plan.label }}
+        </label>
+        {{ form.treatment_plan }}
+        {% if form.treatment_plan.errors %}
+          <div class="form-error">{{ form.treatment_plan.errors.0 }}</div>
+        {% endif %}
+      </div>
+
+      <!-- Prescribed Medications -->
+      <div class="form-group" style="margin-bottom: 18px;">
+        <label class="form-label" style="font-weight:700; color:#1e40af;">
+          💊 {{ form.prescribed_medications.label }}
+        </label>
+        {{ form.prescribed_medications }}
+        <div style="font-size:0.78rem; color:var(--slate-500); margin-top:3px;">
+          Include medication name, dosage strength, route, frequency, and duration.
+        </div>
+        {% if form.prescribed_medications.errors %}
+          <div class="form-error">{{ form.prescribed_medications.errors.0 }}</div>
+        {% endif %}
+      </div>
+
+      <div style="display:grid; grid-template-columns: 1fr 1fr; gap:16px; margin-bottom: 20px;">
+        <!-- Follow-up Instructions -->
+        <div class="form-group">
+          <label class="form-label" style="font-weight:600;">
+            {{ form.follow_up_instructions.label }}
+          </label>
+          {{ form.follow_up_instructions }}
+          {% if form.follow_up_instructions.errors %}
+            <div class="form-error">{{ form.follow_up_instructions.errors.0 }}</div>
+          {% endif %}
+        </div>
+
+        <!-- Follow-up Date -->
+        <div class="form-group">
+          <label class="form-label" style="font-weight:600;">
+            {{ form.follow_up_date.label }}
+          </label>
+          {{ form.follow_up_date }}
+          {% if form.follow_up_date.errors %}
+            <div class="form-error">{{ form.follow_up_date.errors.0 }}</div>
+          {% endif %}
+        </div>
+      </div>
+
+      <!-- Appointment Status Transition -->
+      <div class="form-group" style="background:#f1f5f9; padding:16px; border-radius:10px; margin-bottom:24px;">
+        <label class="form-label" style="font-weight:700; color:var(--slate-800); margin-bottom:6px;">
+          Consultation Status & Action
+        </label>
+        {{ form.appointment_status }}
+        <div style="font-size:0.8rem; color:var(--slate-600); margin-top:4px;">
+          Select <strong>Completed (Finalize Consultation)</strong> when care is completed. The consultation summary and prescription will be made available on the patient's dashboard.
+        </div>
+      </div>
+
+      <!-- Action Buttons -->
+      <div style="display:flex; justify-content:space-between; align-items:center;">
+        <a href="{% url 'doctor_dashboard' %}" class="btn btn-outline">
+          Cancel / Back to Dashboard
+        </a>
+        <div style="display:flex; gap:12px;">
+          <button type="submit" class="btn btn-primary" style="padding:12px 28px; font-size:1rem; font-weight:700;">
+            💾 Save Consultation Notes
+          </button>
+        </div>
+      </div>
+    </form>
+  </div>
+</div>
+{% endblock %}

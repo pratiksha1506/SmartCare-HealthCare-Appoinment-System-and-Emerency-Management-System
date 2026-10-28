@@ -1,0 +1,146 @@
+{% extends 'base.html' %}
+{% load static %}
+
+{% block title %}Hospital Appointments Overview | {{ hospital_name }}{% endblock %}
+
+{% block content %}
+<div class="dashboard-header">
+  <div>
+    <h1>Hospital Appointments Management</h1>
+    <p class="dashboard-subtitle">
+      {{ hospital_name }} &bull; Hospital Administrator Management Portal
+    </p>
+  </div>
+  <div style="display:flex; gap:8px;">
+    <a href="{% url 'admin_doctor_list' %}" class="btn btn-outline">
+      👨‍⚕️ Doctors Directory
+    </a>
+    <a href="{% url 'admin_patient_list' %}" class="btn btn-outline">
+      👥 Patients Directory
+    </a>
+  </div>
+</div>
+
+<!-- Filters Bar -->
+<div class="card" style="margin-bottom: 24px; padding: 16px 20px;">
+  <form method="GET" style="display:flex; gap:16px; align-items:center; flex-wrap:wrap;">
+    <div style="flex:1; min-width:180px;">
+      <label class="form-label" style="font-size:0.8rem; margin-bottom:4px;">Filter by Doctor</label>
+      <select name="doctor_id" class="form-control" style="font-size:0.88rem; padding:6px 12px;">
+        <option value="">-- All Hospital Doctors --</option>
+        {% for doc in doctors %}
+          <option value="{{ doc.id }}" {% if selected_doctor == doc.id|stringformat:"s" %}selected{% endif %}>
+            Dr. {{ doc.user.get_full_name }} ({{ doc.specialization }})
+          </option>
+        {% endfor %}
+      </select>
+    </div>
+
+    <div style="flex:1; min-width:160px;">
+      <label class="form-label" style="font-size:0.8rem; margin-bottom:4px;">Filter by Status</label>
+      <select name="status" class="form-control" style="font-size:0.88rem; padding:6px 12px;">
+        <option value="">-- All Statuses --</option>
+        {% for s_val, s_label in statuses %}
+          <option value="{{ s_val }}" {% if selected_status == s_val %}selected{% endif %}>
+            {{ s_label }}
+          </option>
+        {% endfor %}
+      </select>
+    </div>
+
+    <div style="flex:1; min-width:150px;">
+      <label class="form-label" style="font-size:0.8rem; margin-bottom:4px;">Filter by Date</label>
+      <input type="date" name="date" class="form-control" value="{{ selected_date }}" style="font-size:0.88rem; padding:6px 12px;">
+    </div>
+
+    <div style="align-self:flex-end;">
+      <button type="submit" class="btn btn-primary" style="padding:7px 18px; font-size:0.88rem;">
+        Apply Filters
+      </button>
+      <a href="{% url 'admin_appointment_list' %}" class="btn btn-outline" style="padding:7px 14px; font-size:0.88rem;">
+        Reset
+      </a>
+    </div>
+  </form>
+</div>
+
+<div class="table-responsive">
+  <table class="dashboard-table">
+    <thead>
+      <tr>
+        <th>Appointment ID</th>
+        <th>Date & Time</th>
+        <th>Patient Name</th>
+        <th>Assigned Doctor</th>
+        <th>Reason / Symptoms</th>
+        <th>Status</th>
+        <th>Actions</th>
+      </tr>
+    </thead>
+    <tbody>
+      {% for apt in appointments %}
+        <tr>
+          <td>
+            <strong>#APT-{{ apt.id }}</strong>
+          </td>
+          <td>
+            <div style="font-weight:600; color:var(--slate-900);">{{ apt.appointment_date|date:"M d, Y" }}</div>
+            <div style="font-size:0.8rem; color:var(--slate-500);">{{ apt.appointment_time|time:"h:i A" }}</div>
+          </td>
+          <td>
+            <strong>{{ apt.patient.user.get_full_name|default:apt.patient.user.username }}</strong>
+            <div style="font-size:0.78rem; color:var(--slate-500);">📞 {{ apt.patient.user.contact_number|default:"No phone" }}</div>
+          </td>
+          <td>
+            <strong style="color:var(--primary-teal);">Dr. {{ apt.doctor.user.get_full_name }}</strong>
+            <div style="font-size:0.78rem; color:var(--slate-500);">{{ apt.doctor.specialization }}</div>
+          </td>
+          <td>
+            <div style="font-size:0.85rem; color:var(--slate-800);">{{ apt.get_consultation_reason_display }}</div>
+            {% if apt.symptoms_description %}
+              <div style="font-size:0.75rem; color:var(--slate-500); max-width:180px; white-space:nowrap; overflow:hidden; text-overflow:ellipsis;">
+                {{ apt.symptoms_description }}
+              </div>
+            {% endif %}
+          </td>
+          <td>
+            {% if apt.status == 'COMPLETED' %}
+              <span class="badge-status status-confirmed">Completed</span>
+            {% elif apt.status == 'IN_CONSULTATION' %}
+              <span class="badge-status" style="background:#e0e7ff; color:#3730a3;">In Consultation</span>
+            {% elif apt.status == 'CHECKED_IN' %}
+              <span class="badge-status" style="background:#fef3c7; color:#92400e;">Checked In</span>
+            {% elif apt.status == 'SCHEDULED' %}
+              <span class="badge-status" style="background:#dbeafe; color:#1e40af;">Scheduled</span>
+            {% elif apt.status == 'CANCELLED' %}
+              <span class="badge-status status-cancelled">Cancelled</span>
+            {% elif apt.status == 'DELAYED_BY_EMERGENCY' %}
+              <span class="badge-status" style="background:#fee2e2; color:#b91c1c;">Emergency Delay (+{{ apt.delayed_by_minutes }}m)</span>
+            {% else %}
+              <span class="badge-status">{{ apt.get_status_display }}</span>
+            {% endif %}
+          </td>
+          <td>
+            <div style="display:flex; gap:6px;">
+              <a href="{% url 'appointment_detail' apt.id %}" class="btn btn-sm btn-outline" title="View details">
+                View
+              </a>
+              {% if apt.status != 'COMPLETED' and apt.status != 'CANCELLED' %}
+                <a href="{% url 'cancel_appointment' apt.id %}" class="btn btn-sm btn-outline" style="color:#b91c1c; border-color:#fecaca;" title="Cancel appointment">
+                  Cancel
+                </a>
+              {% endif %}
+            </div>
+          </td>
+        </tr>
+      {% empty %}
+        <tr>
+          <td colspan="7" style="text-align:center; padding:48px; color:var(--slate-500);">
+            No appointments found matching the selected filters.
+          </td>
+        </tr>
+      {% endfor %}
+    </tbody>
+  </table>
+</div>
+{% endblock %}

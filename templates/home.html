@@ -1,0 +1,223 @@
+{% extends 'base.html' %}
+{% load static %}
+
+{% block title %}SmartCare – Healthcare Appointment & Emergency Management | {{ hospital_name }}{% endblock %}
+
+{% block content %}
+<!-- Main Hero Section -->
+<section class="hero" style="text-align: center; padding: 48px 24px; margin-bottom: 36px; background: linear-gradient(135deg, #0d9488 0%, #1e40af 100%); border-radius: var(--radius-lg); color: #ffffff;">
+  <div style="display:inline-flex; align-items:center; gap:10px; background:rgba(255,255,255,0.18); padding:6px 18px; border-radius:9999px; margin-bottom:16px; font-size:0.9rem; font-weight:600;">
+    <span>⚕️ SmartCare Central Hospital</span> &bull; <span>Single-Hospital System</span>
+  </div>
+  
+  <h1 style="font-size: 2.5rem; font-weight: 800; line-height: 1.25; margin-bottom: 14px; letter-spacing: -0.5px;">
+    SmartCare – Healthcare Appointment & Emergency Management
+  </h1>
+  
+  <!-- <p style="font-size: 1.15rem; max-width: 800px; margin: 0 auto 28px auto; opacity: 0.95; line-height: 1.5;">
+    Comprehensive clinical appointment booking, intelligent departure recommendations with safety buffers, and objective priority-based emergency triage care.
+  </p> -->
+
+  <div style="display:flex; justify-content:center; gap:14px; flex-wrap:wrap;">
+    <a href="{% url 'find_doctors' %}" class="btn" style="background:#ffffff; color:#0f766e; font-weight:700; padding:12px 24px; font-size:1rem; box-shadow:var(--shadow-md);">
+      🔍 Find Hospital Specialists
+    </a>
+    <a href="{% url 'emergency_advisory' %}" class="btn btn-danger" style="padding:12px 24px; font-size:1rem; font-weight:700; box-shadow:var(--shadow-md);">
+      🚨 Emergency Medical Assistance
+    </a>
+  </div>
+</section>
+
+<!-- THREE PROMINENT LOGIN OPTIONS -->
+<section style="margin-bottom: 48px;">
+  <div style="text-align: center; margin-bottom: 28px;">
+    <h2 style="font-size: 1.85rem; font-weight: 800; color: var(--slate-900); margin-bottom: 8px;">
+      Access Your SmartCare Portal
+    </h2>
+    <!-- <p style="font-size: 1.05rem; color: var(--slate-600); max-width: 650px; margin: 0 auto;">
+      Please select your role to access your dedicated clinical or administrative workspace.
+    </p> -->
+  </div>
+
+  <div class="cards-grid" style="grid-template-columns: repeat(auto-fit, minmax(320px, 1fr)); gap: 24px;">
+    
+    <!-- Option 1: PATIENT LOGIN -->
+    <div class="card" style="display: flex; flex-direction: column; justify-content: space-between; border-top: 5px solid var(--primary-teal); background:#ffffff; box-shadow: var(--shadow-md); transition: transform 0.2s ease, box-shadow 0.2s ease;">
+      <div>
+        <div style="display:flex; justify-content:space-between; align-items:center; margin-bottom:16px;">
+          <div style="width:52px; height:52px; border-radius:12px; background:var(--primary-teal-light); display:flex; align-items:center; justify-content:center; font-size:1.8rem; color:var(--primary-teal-dark);">
+            👤
+          </div>
+          <span style="font-size:0.75rem; font-weight:700; text-transform:uppercase; letter-spacing:0.5px; background:var(--primary-teal-light); color:var(--primary-teal-dark); padding:4px 10px; border-radius:9999px;">
+            Patient Portal
+          </span>
+        </div>
+
+        <h3 style="font-size: 1.35rem; font-weight: 800; color: var(--slate-900); margin-bottom: 10px;">
+          LOGIN AS PATIENT
+        </h3>
+        
+        <!-- <p style="font-size: 0.93rem; color: var(--slate-600); line-height: 1.55; margin-bottom: 20px;">
+          Find doctors by medical specialization, book appointment slots, receive personalized departure time alerts based on estimated travel duration, and view your consultation history.
+        </p> -->
+      </div>
+
+      <div>
+        <a href="{% url 'patient_login' %}" class="btn btn-primary" style="width: 100%; padding: 12px; font-size: 1rem; font-weight: 700; margin-bottom: 12px; text-align: center;">
+          LOGIN AS PATIENT &rarr;
+        </a>
+        
+        <div style="text-align: center; padding-top: 10px; border-top: 1px solid var(--slate-100);">
+          <span style="font-size: 0.85rem; color: var(--slate-500);">New patient? </span>
+          <a href="{% url 'patient_register' %}" style="font-size: 0.88rem; font-weight: 700; color: var(--primary-teal); text-decoration: underline;">
+            Register as Patient
+          </a>
+        </div>
+      </div>
+    </div>
+
+    <!-- Option 2: DOCTOR LOGIN -->
+    <div class="card" style="display: flex; flex-direction: column; justify-content: space-between; border-top: 5px solid var(--primary-blue); background:#ffffff; box-shadow: var(--shadow-md); transition: transform 0.2s ease, box-shadow 0.2s ease;">
+      <div>
+        <div style="display:flex; justify-content:space-between; align-items:center; margin-bottom:16px;">
+          <div style="width:52px; height:52px; border-radius:12px; background:var(--primary-blue-light); display:flex; align-items:center; justify-content:center; font-size:1.8rem; color:var(--primary-blue-dark);">
+            🩺
+          </div>
+          <span style="font-size:0.75rem; font-weight:700; text-transform:uppercase; letter-spacing:0.5px; background:var(--primary-blue-light); color:var(--primary-blue-dark); padding:4px 10px; border-radius:9999px;">
+            Clinician Portal
+          </span>
+        </div>
+
+        <h3 style="font-size: 1.35rem; font-weight: 800; color: var(--slate-900); margin-bottom: 10px;">
+          LOGIN AS DOCTOR
+        </h3>
+        
+        <!-- <p style="font-size: 0.93rem; color: var(--slate-600); line-height: 1.55; margin-bottom: 20px;">
+          View daily appointments, manage consultation slots and weekly availability schedules, record diagnosis and prescriptions, and review emergency schedule disruptions.
+        </p> -->
+      </div>
+
+      <div>
+        <a href="{% url 'doctor_login' %}" class="btn btn-secondary" style="width: 100%; padding: 12px; font-size: 1rem; font-weight: 700; margin-bottom: 12px; text-align: center;">
+          LOGIN AS DOCTOR &rarr;
+        </a>
+        
+        <div style="text-align: center; padding-top: 10px; border-top: 1px solid var(--slate-100);">
+          <span style="font-size: 0.8rem; color: var(--slate-500);">
+            Physicians are onboarded by Hospital Administration
+          </span>
+        </div>
+      </div>
+    </div>
+
+    <!-- Option 3: ADMINISTRATOR LOGIN -->
+    <div class="card" style="display: flex; flex-direction: column; justify-content: space-between; border-top: 5px solid #d97706; background:#ffffff; box-shadow: var(--shadow-md); transition: transform 0.2s ease, box-shadow 0.2s ease;">
+      <div>
+        <div style="display:flex; justify-content:space-between; align-items:center; margin-bottom:16px;">
+          <div style="width:52px; height:52px; border-radius:12px; background:#fef3c7; display:flex; align-items:center; justify-content:center; font-size:1.8rem; color:#92400e;">
+            🏥
+          </div>
+          <span style="font-size:0.75rem; font-weight:700; text-transform:uppercase; letter-spacing:0.5px; background:#fef3c7; color:#92400e; padding:4px 10px; border-radius:9999px;">
+            Admin Portal
+          </span>
+        </div>
+
+        <h3 style="font-size: 1.35rem; font-weight: 800; color: var(--slate-900); margin-bottom: 10px;">
+          LOGIN AS ADMINISTRATOR
+        </h3>
+        
+        <!-- <p style="font-size: 0.93rem; color: var(--slate-600); line-height: 1.55; margin-bottom: 20px;">
+          Manage hospital doctors, onboard new physicians with license numbers & fees, configure working hours and slot durations, reset passwords, and oversee patient appointments.
+        </p> -->
+      </div>
+
+      <div>
+        <a href="{% url 'admin_login' %}" class="btn" style="background:#b45309; color:#ffffff; width: 100%; padding: 12px; font-size: 1rem; font-weight: 700; margin-bottom: 12px; text-align: center;">
+          LOGIN AS ADMINISTRATOR &rarr;
+        </a>
+        
+        <div style="text-align: center; padding-top: 10px; border-top: 1px solid var(--slate-100);">
+          <span style="font-size: 0.8rem; color: var(--slate-500);">
+            Authorized Hospital Administration Personnel Only
+          </span>
+        </div>
+      </div>
+    </div>
+
+  </div>
+</section>
+
+<!-- Clinical Safety Notice -->
+<div class="clinical-disclaimer-box" style="margin-bottom: 36px; padding: 18px 22px; background: #fef2f2; border-left: 4px solid var(--priority-1-critical); border-radius: var(--radius-sm);">
+  <strong style="color: var(--priority-1-critical); font-size: 0.95rem;">⚠️ Clinical Safety & Emergency Advisory:</strong>
+  <span style="color: var(--slate-700); font-size: 0.92rem; line-height: 1.5;">
+    If you or someone around you is experiencing chest pain, acute shortness of breath, severe trauma, sudden numbness, or heavy bleeding, call 911 / 112 immediately or proceed directly to our Emergency Department. The SmartCare routine appointment scheduler is intended for non-acute elective consultations and must never delay emergency medical care.
+  </span>
+</div>
+
+<!-- Health Concern Guidance Section -->
+<section style="margin-bottom: 44px;">
+  <div style="display:flex; justify-content:space-between; align-items:flex-end; margin-bottom:16px; flex-wrap:wrap; gap:10px;">
+    <div>
+      <h2 style="font-size:1.55rem; color:var(--slate-900);">Looking for the right clinical department?</h2>
+      <p style="color:var(--slate-600); font-size:0.95rem;">
+        Select your primary health concern below to view relevant hospital specialists.
+        <!-- <em style="color:var(--slate-500);">(Navigational recommendation only — not a clinical diagnosis)</em> -->
+      </p>
+    </div>
+    <a href="{% url 'find_doctors' %}" class="btn btn-sm btn-outline">View All Specialists &rarr;</a>
+  </div>
+
+  <div style="display:flex; gap:10px; flex-wrap:wrap; margin-top:12px;">
+    <a href="{% url 'find_doctors' %}?concern=heart" class="btn btn-sm btn-outline" style="border-radius:9999px;">
+      🫀 Heart Concern / Palpitations &rarr; <strong>Cardiology</strong>
+    </a>
+    <a href="{% url 'find_doctors' %}?concern=skin_hair" class="btn btn-sm btn-outline" style="border-radius:9999px;">
+      🧴 Skin or Hair Concern &rarr; <strong>Dermatology</strong>
+    </a>
+    <a href="{% url 'find_doctors' %}?concern=neurological" class="btn btn-sm btn-outline" style="border-radius:9999px;">
+      🧠 Neurological Concern / Migraines &rarr; <strong>Neurology</strong>
+    </a>
+    <a href="{% url 'find_doctors' %}?concern=bone_joint" class="btn btn-sm btn-outline" style="border-radius:9999px;">
+      🦴 Bone or Joint Discomfort &rarr; <strong>Orthopedics</strong>
+    </a>
+    <a href="{% url 'find_doctors' %}?concern=child_health" class="btn btn-sm btn-outline" style="border-radius:9999px;">
+      👶 Child Health Concern &rarr; <strong>Pediatrics</strong>
+    </a>
+    <a href="{% url 'find_doctors' %}?concern=general" class="btn btn-sm btn-outline" style="border-radius:9999px;">
+      🩺 General Wellness &rarr; <strong>General Medicine</strong>
+    </a>
+  </div>
+</section>
+
+<!-- Single Hospital Pillars -->
+<section style="margin-bottom: 48px;">
+  <h2 style="font-size:1.55rem; margin-bottom:20px; color:var(--slate-900);">Hospital Care & Coordination</h2>
+  
+  <div class="cards-grid">
+    <div class="card">
+      <div style="font-size:2rem; margin-bottom:12px; color:var(--primary-teal);">🚗</div>
+      <h3 style="font-size:1.2rem; margin-bottom:8px;">Smart Departure Timing</h3>
+      <p style="color:var(--slate-600); font-size:0.92rem; line-height:1.5;">
+        Accurate travel durations and customizable safety buffers (10–30 min) ensure you arrive calmly for your scheduled consultation at {{ hospital_name }}.
+      </p>
+    </div>
+
+    <div class="card">
+      <div style="font-size:2rem; margin-bottom:12px; color:var(--priority-1-critical);">🚨</div>
+      <h3 style="font-size:1.2rem; margin-bottom:8px;">Separate Priority Emergency Queue</h3>
+      <p style="color:var(--slate-600); font-size:0.92rem; line-height:1.5;">
+        Emergency care is managed separately from routine appointments. Our emergency triage queue uses an objective Python min-heap ensuring Critical and Urgent cases are treated first.
+      </p>
+    </div>
+
+    <div class="card">
+      <div style="font-size:2rem; margin-bottom:12px; color:var(--primary-blue);">🔒</div>
+      <h3 style="font-size:1.2rem; margin-bottom:8px;">Doctor-Specific Patient Confidentiality</h3>
+      <p style="color:var(--slate-600); font-size:0.92rem; line-height:1.5;">
+        Doctors only access appointments booked specifically with them. Patient coordinates and personal medical concerns are kept strictly confidential.
+      </p>
+    </div>
+  </div>
+</section>
+{% endblock %}

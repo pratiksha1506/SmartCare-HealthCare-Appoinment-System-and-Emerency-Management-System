@@ -1,0 +1,331 @@
+{% extends 'base.html' %}
+{% load static %}
+
+{% block title %}Emergency Triage & Priority Queue | SmartCare{% endblock %}
+
+{% block content %}
+<div class="dashboard-header">
+  <div>
+    <h1 style="color:#b91c1c; display:flex; align-items:center; gap:8px;">
+      🚨 Emergency Department Priority Queue
+    </h1>
+    <p class="dashboard-subtitle">
+      Clinical triage queue powered by a genuine Python min-heap. Ordered strictly by clinical priority (P1 &gt; P2 &gt; P3) and arrival wait duration.
+    </p>
+  </div>
+  <div>
+    <button type="button" class="btn btn-danger" data-modal-open="register-emergency-modal">
+      + Register Emergency Patient
+    </button>
+  </div>
+</div>
+
+<!-- Strict Clinical Protocol Notice (Feature 3) -->
+<div class="clinical-disclaimer-box" style="border-left-color: #dc2626;">
+  <strong>⚠️ Clinical Protocol & Safety Mandate:</strong>
+  Medical urgency must be determined by qualified clinical personnel using standardized triage frameworks (e.g. Manchester Triage System / ESI). 
+  Software priority sorting assists administrative queuing only and <em>never</em> autonomously evaluates clinical acuity, diagnoses conditions, or replaces hands-on clinician assessment.
+</div>
+
+<!-- Queue Summary Metric Cards -->
+<div class="metrics-row">
+  <div class="stat-card critical">
+    <div class="stat-card-title">Priority 1 &bull; Critical</div>
+    <div class="stat-card-value" style="color:var(--priority-1-critical);">{{ critical_count }}</div>
+    <div class="stat-card-desc">Immediate life-threatening presentations</div>
+  </div>
+  <div class="stat-card urgent">
+    <div class="stat-card-title">Priority 2 &bull; Urgent</div>
+    <div class="stat-card-value" style="color:var(--priority-2-urgent);">{{ urgent_count }}</div>
+    <div class="stat-card-desc">Severe distress / potential rapid deterioration</div>
+  </div>
+  <div class="stat-card less-urgent">
+    <div class="stat-card-title">Priority 3 &bull; Less Urgent</div>
+    <div class="stat-card-value" style="color:var(--priority-3-less);">{{ less_urgent_count }}</div>
+    <div class="stat-card-desc">Stable emergency cases / minor trauma</div>
+  </div>
+  <div class="stat-card primary">
+    <div class="stat-card-title">Active Queue Total</div>
+    <div class="stat-card-value">{{ queue_size }}</div>
+    <div class="stat-card-desc">{{ assessing_count }} currently under active clinical care</div>
+  </div>
+</div>
+
+<!-- Active Priority Queue Table -->
+<section style="margin-bottom: 40px;">
+  <div style="display:flex; justify-content:space-between; align-items:center; margin-bottom:14px;">
+    <h2 style="font-size:1.35rem; color:var(--slate-900);">
+      Active Triage Waiting Queue ({{ queue_size }} Patients)
+    </h2>
+    <span style="font-size:0.82rem; color:var(--slate-500);">
+      Ordering: Priority 1 first &rarr; Priority 2 &rarr; Priority 3 (Tie-breaker: longest waiting time first)
+    </span>
+  </div>
+
+  <div class="table-responsive">
+    <table class="dashboard-table">
+      <thead>
+        <tr>
+          <th>Order</th>
+          <th>Patient Code & Name</th>
+          <th>Age / Sex</th>
+          <th>Triage Priority</th>
+          <th>Arrival Time</th>
+          <th>Waiting Time</th>
+          <th>Chief Complaint</th>
+          <th>Status</th>
+          <th>Clinical Actions</th>
+        </tr>
+      </thead>
+      <tbody>
+        {% for item in active_queue %}
+          <tr class="row-priority-{{ item.priority_level }}">
+            <td style="font-weight:800; font-size:1.1rem; color:var(--slate-700);">
+              #{{ forloop.counter }}
+            </td>
+            <td>
+              <strong style="color:var(--slate-900);">{{ item.full_name }}</strong><br>
+              <code style="font-size:0.78rem; color:var(--slate-500);">{{ item.patient_code }}</code>
+            </td>
+            <td>
+              {{ item.age }} yrs &bull; {{ item.gender }}
+            </td>
+            <td>
+              <span class="badge-priority-{{ item.priority_level }}">
+                {{ item.priority_name }} (P{{ item.priority_level }})
+              </span>
+            </td>
+            <td>
+              {{ item.arrival_time|time:"h:i A" }}
+            </td>
+            <td>
+              <span class="waiting-badge {% if item.waiting_duration_seconds > 1800 %}long-wait{% endif %}">
+                ⏳ {{ item.waiting_duration_display }}
+              </span>
+            </td>
+            <td>
+              <span style="font-size:0.85rem;" title="{{ item.chief_complaint }}">
+                {{ item.chief_complaint|truncatechars:45 }}
+              </span>
+              {% if item.triage_notes %}
+                <div style="font-size:0.75rem; color:var(--slate-500);">
+                  <em>Notes: {{ item.triage_notes|truncatechars:35 }}</em>
+                </div>
+              {% endif %}
+            </td>
+            <td>
+              <span class="badge-status status-{{ item.status|lower }}">{{ item.status_display }}</span>
+              {% if item.attending_doctor %}
+                <div style="font-size:0.75rem; color:var(--primary-teal); margin-top:2px;">
+                  Dr. {{ item.attending_doctor }}
+                </div>
+              {% endif %}
+            </td>
+            <td>
+              <div style="display:flex; gap:6px; flex-wrap:wrap;">
+                <!-- Reassess priority button opens modal -->
+                <button type="button" class="btn btn-sm btn-outline" 
+                        onclick="openReassessModal('{{ item.id }}', '{{ item.patient_code }}', '{{ item.full_name }}', '{{ item.priority_level }}')"
+                        title="Reassess Priority">
+                  ⚖️ Reassess
+                </button>
+
+                {% if item.status == 'WAITING' %}
+                  <form method="POST" action="{% url 'emergency_update_status' item.id %}" style="display:inline;">
+                    {% csrf_token %}
+                    <input type="hidden" name="status" value="UNDER_ASSESSMENT">
+                    <button type="submit" class="btn btn-sm btn-primary" title="Begin clinical assessment">
+                      Assess
+                    </button>
+                  </form>
+                {% elif item.status == 'UNDER_ASSESSMENT' %}
+                  <form method="POST" action="{% url 'emergency_update_status' item.id %}" style="display:inline;">
+                    {% csrf_token %}
+                    <input type="hidden" name="status" value="ADMITTED">
+                    <button type="submit" class="btn btn-sm btn-secondary" title="Admit to Inpatient / ICU">
+                      Admit
+                    </button>
+                  </form>
+                  <form method="POST" action="{% url 'emergency_update_status' item.id %}" style="display:inline;">
+                    {% csrf_token %}
+                    <input type="hidden" name="status" value="DISCHARGED">
+                    <button type="submit" class="btn btn-sm btn-outline" style="color:#059669;" title="Discharge patient">
+                      Discharge
+                    </button>
+                  </form>
+                {% endif %}
+              </div>
+            </td>
+          </tr>
+        {% empty %}
+          <tr>
+            <td colspan="9" style="text-align:center; padding:36px; color:var(--slate-500);">
+              No active emergency patients currently in the triage queue.
+            </td>
+          </tr>
+        {% endfor %}
+      </tbody>
+    </table>
+  </div>
+</section>
+
+<!-- Recent Emergency Discharges & Admissions Table -->
+{% if recent_history %}
+  <section>
+    <h2 style="font-size:1.25rem; color:var(--slate-800); margin-bottom:14px;">
+      Recently Concluded Emergency Cases (Admitted / Discharged)
+    </h2>
+    <div class="table-responsive">
+      <table class="dashboard-table">
+        <thead>
+          <tr>
+            <th>Patient Code</th>
+            <th>Name</th>
+            <th>Triage Level</th>
+            <th>Final Status</th>
+            <th>Arrival</th>
+            <th>Concluded At</th>
+          </tr>
+        </thead>
+        <tbody>
+          {% for p in recent_history %}
+            <tr>
+              <td><code>{{ p.patient_code }}</code></td>
+              <td><strong>{{ p.full_name }}</strong></td>
+              <td><span class="badge-priority-{{ p.priority_level }}">{{ p.priority_name }}</span></td>
+              <td><span class="badge-status status-{{ p.status|lower }}">{{ p.get_status_display }}</span></td>
+              <td>{{ p.arrival_time|time:"h:i A" }}</td>
+              <td>{{ p.updated_at|date:"M d, h:i A" }}</td>
+            </tr>
+          {% endfor %}
+        </tbody>
+      </table>
+    </div>
+  </section>
+{% endif %}
+
+<!-- Register Emergency Patient Modal -->
+<div id="register-emergency-modal" class="modal-overlay">
+  <div class="modal-content" style="max-width:680px;">
+    <div class="modal-header">
+      <h3 style="color:#b91c1c;">🚨 Intake Emergency Patient</h3>
+      <button type="button" class="modal-close-btn" data-modal-close>&times;</button>
+    </div>
+
+    <form method="POST" action="{% url 'emergency_queue_dashboard' %}">
+      {% csrf_token %}
+      <input type="hidden" name="action" value="register_patient">
+
+      <div class="form-row">
+        <div class="form-group">
+          <label for="{{ registration_form.full_name.id_for_label }}">Patient Full Name *</label>
+          {{ registration_form.full_name }}
+        </div>
+        <div class="form-group">
+          <label for="{{ registration_form.contact_number.id_for_label }}">Contact / Next of Kin</label>
+          {{ registration_form.contact_number }}
+        </div>
+      </div>
+
+      <div class="form-row">
+        <div class="form-group">
+          <label for="{{ registration_form.age.id_for_label }}">Age (Years) *</label>
+          {{ registration_form.age }}
+        </div>
+        <div class="form-group">
+          <label for="{{ registration_form.gender.id_for_label }}">Biological Sex / Gender *</label>
+          {{ registration_form.gender }}
+        </div>
+      </div>
+
+      <div class="form-group">
+        <label for="{{ registration_form.priority_level.id_for_label }}" style="color:#b91c1c; font-weight:700;">
+          Clinical Triage Priority Level *
+        </label>
+        {{ registration_form.priority_level }}
+        <div class="form-help-text">
+          P1 = Immediate resuscitation / life threat &bull; P2 = Severe pain / potential rapid deterioration &bull; P3 = Stable
+        </div>
+      </div>
+
+      <div class="form-group">
+        <label for="{{ registration_form.chief_complaint.id_for_label }}">Chief Complaint / Presenting Incident *</label>
+        {{ registration_form.chief_complaint }}
+      </div>
+
+      <div class="form-group">
+        <label for="{{ registration_form.triage_notes.id_for_label }}">Initial Clinical Observations & Vitals</label>
+        {{ registration_form.triage_notes }}
+      </div>
+
+      <div class="form-group">
+        <label for="{{ registration_form.patient_profile.id_for_label }}">Link Registered Hospital Patient Account (Optional)</label>
+        {{ registration_form.patient_profile }}
+      </div>
+
+      <div class="form-group">
+        <label for="{{ registration_form.attending_clinician.id_for_label }}">Assign Attending Clinician (Optional)</label>
+        {{ registration_form.attending_clinician }}
+      </div>
+
+      <div style="display:flex; justify-content:flex-end; gap:10px; margin-top:20px;">
+        <button type="button" class="btn btn-outline" data-modal-close>Cancel</button>
+        <button type="submit" class="btn btn-danger">Register & Enqueue Patient</button>
+      </div>
+    </form>
+  </div>
+</div>
+
+<!-- Reassess Priority Modal (Feature 3) -->
+<div id="reassess-modal" class="modal-overlay">
+  <div class="modal-content">
+    <div class="modal-header">
+      <h3>⚖️ Reassess Clinical Priority</h3>
+      <button type="button" class="modal-close-btn" data-modal-close>&times;</button>
+    </div>
+
+    <form method="POST" id="reassess-form" action="">
+      {% csrf_token %}
+      <p style="font-size:0.9rem; color:var(--slate-700); margin-bottom:14px;">
+        Updating priority for patient <strong id="reassess-patient-code"></strong> (<span id="reassess-patient-name"></span>). 
+        Current Priority: <strong id="reassess-current-priority"></strong>
+      </p>
+
+      <div class="form-group">
+        <label for="id-new-priority">New Clinical Priority *</label>
+        <select name="new_priority" id="id-new-priority" class="form-control" required>
+          <option value="1">Priority 1 - CRITICAL (Immediate life-threatening)</option>
+          <option value="2">Priority 2 - URGENT (Severe distress / deterioration)</option>
+          <option value="3">Priority 3 - LESS URGENT (Stable vitals / standard emergency)</option>
+        </select>
+      </div>
+
+      <div class="form-group">
+        <label for="id-clinical-rationale">Mandatory Clinical Rationale *</label>
+        <textarea name="clinical_rationale" id="id-clinical-rationale" rows="3" class="form-control" 
+                  placeholder="Document physiological change, vital reassessment, or diagnostic findings justifying priority change..." required></textarea>
+      </div>
+
+      <div style="display:flex; justify-content:flex-end; gap:10px; margin-top:20px;">
+        <button type="button" class="btn btn-outline" data-modal-close>Cancel</button>
+        <button type="submit" class="btn btn-primary">Update Priority & Rebuild Queue</button>
+      </div>
+    </form>
+  </div>
+</div>
+{% endblock %}
+
+{% block extra_js %}
+<script>
+function openReassessModal(patientId, code, name, currentPriority) {
+  const form = document.getElementById('reassess-form');
+  form.action = `/emergency/patient/${patientId}/reassess/`;
+  document.getElementById('reassess-patient-code').textContent = code;
+  document.getElementById('reassess-patient-name').textContent = name;
+  document.getElementById('reassess-current-priority').textContent = `Priority ${currentPriority}`;
+  document.getElementById('id-new-priority').value = currentPriority;
+  document.getElementById('id-clinical-rationale').value = '';
+  document.getElementById('reassess-modal').classList.add('open');
+}
+</script>
+{% endblock %}

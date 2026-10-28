@@ -1,0 +1,102 @@
+{% extends 'base.html' %}
+{% load static %}
+
+{% block title %}My Emergency Triage Status | {{ hospital_name }}{% endblock %}
+
+{% block content %}
+<div class="dashboard-header">
+  <div>
+    <h1>Emergency Queue Status Tracker</h1>
+    <p class="dashboard-subtitle">
+      Tracking Case: <code>{{ emergency_case.patient_code }}</code> &bull; {{ hospital_name }}
+    </p>
+  </div>
+  <a href="{% url 'patient_dashboard' %}" class="btn btn-outline btn-sm">&larr; Patient Dashboard</a>
+</div>
+
+<!-- Privacy & Safety Notice -->
+<div class="clinical-disclaimer-box" style="border-left-color:var(--primary-teal);">
+  <strong>Patient Privacy & Clinical Priority Notice:</strong>
+  This display is private to you and updates dynamically as clinical staff triage arriving cases. 
+  Emergency care is prioritized strictly by medical urgency (Critical &gt; Urgent &gt; Less Urgent) rather than arrival order alone. 
+  If your symptoms worsen or you develop difficulty breathing, notify triage staff immediately.
+</div>
+
+<div class="cards-grid" style="margin-bottom:28px;">
+  <!-- Queue Position Metric Card -->
+  <div class="card" style="border-top:5px solid #dc2626; text-align:center; padding:28px 20px;">
+    <div style="font-size:0.85rem; font-weight:700; color:var(--slate-500); text-transform:uppercase;">
+      Your Current Queue Position
+    </div>
+    {% if queue_data.in_active_queue %}
+      <div style="font-size:3.5rem; font-weight:900; color:#dc2626; margin:8px 0;">
+        #{{ queue_data.position }}
+      </div>
+      <p style="font-weight:600; color:var(--slate-700); font-size:1.05rem;">
+        {{ queue_data.patients_ahead }} patient{{ queue_data.patients_ahead|pluralize }} ahead of you
+      </p>
+      <div style="font-size:0.82rem; color:var(--slate-500); margin-top:8px;">
+        Total active emergency cases currently in queue: {{ queue_data.total_in_queue }}
+      </div>
+    {% else %}
+      <div style="font-size:2rem; font-weight:800; color:var(--primary-teal); margin:14px 0;">
+        {{ emergency_case.get_status_display }}
+      </div>
+      <p style="font-size:0.9rem; color:var(--slate-600);">
+        {{ queue_data.disclaimer }}
+      </p>
+    {% endif %}
+  </div>
+
+  <!-- Clinical Triage Acuity Card -->
+  <div class="card" style="border-top:5px solid var(--primary-teal); padding:24px;">
+    <h3 style="font-size:1.15rem; color:var(--slate-900); margin-bottom:14px;">Triage Details</h3>
+    <div style="margin-bottom:12px;">
+      <span style="font-size:0.85rem; color:var(--slate-500);">Current Clinical Status:</span>
+      <div style="margin-top:2px;">
+        <span class="badge-status status-{{ emergency_case.status|lower }}">
+          {{ emergency_case.get_status_display }}
+        </span>
+      </div>
+    </div>
+
+    <div style="margin-bottom:12px;">
+      <span style="font-size:0.85rem; color:var(--slate-500);">Assigned Triage Priority:</span>
+      <div style="margin-top:2px;">
+        <span class="badge-priority-{{ emergency_case.priority_level }}">
+          {{ emergency_case.priority_name }}
+        </span>
+      </div>
+    </div>
+
+    <div style="margin-bottom:12px;">
+      <span style="font-size:0.85rem; color:var(--slate-500);">Arrival Time:</span>
+      <div style="font-weight:700; color:var(--slate-800);">
+        {{ emergency_case.arrival_time|time:"h:i A" }} (Waiting duration: {{ emergency_case.waiting_duration_display }})
+      </div>
+    </div>
+
+    <div style="background:var(--slate-50); padding:10px 12px; border-radius:var(--radius-sm); font-size:0.82rem; color:var(--slate-600); margin-top:14px;">
+      📍 <strong>Facility Location:</strong> {{ emergency_dept }}<br>
+      📞 <strong>Desk Phone:</strong> {{ emergency_phone }}
+    </div>
+  </div>
+</div>
+
+<div class="card">
+  <h3 style="font-size:1.1rem; color:var(--slate-900); margin-bottom:8px;">
+    ℹ️ Estimated Waiting Time & Queue Movement
+  </h3>
+  <p style="font-size:0.9rem; color:var(--slate-600); line-height:1.6; margin-bottom:14px;">
+    Because higher-acuity emergency cases (e.g. cardiac arrests, acute trauma resuscitations) must be treated immediately upon arrival regardless of who arrived first, exact time estimations are subject to clinical developments.
+  </p>
+  <div style="display:flex; justify-content:space-between; align-items:center; flex-wrap:wrap; gap:12px;">
+    <a href="" class="btn btn-primary btn-sm">
+      🔄 Refresh My Queue Position
+    </a>
+    <span style="font-size:0.82rem; color:var(--slate-500);">
+      Data refreshed from hospital triage database
+    </span>
+  </div>
+</div>
+{% endblock %}

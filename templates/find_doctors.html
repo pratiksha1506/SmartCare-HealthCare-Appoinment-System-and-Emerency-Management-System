@@ -1,0 +1,136 @@
+{% extends 'base.html' %}
+{% load static %}
+
+{% block title %}Medical Specialists Directory | {{ DEFAULT_HOSPITAL_NAME }}{% endblock %}
+
+{% block content %}
+<div class="dashboard-header">
+  <div>
+    <h1>Medical Specialists Directory</h1>
+    <p class="dashboard-subtitle">
+      {{ DEFAULT_HOSPITAL_NAME }} &bull; Consult certified clinicians, view consultation fees, and schedule appointments.
+    </p>
+  </div>
+  <div>
+    <a href="{% url 'emergency_advisory' %}" class="btn btn-danger btn-sm">
+      🚨 Emergency Assistance
+    </a>
+  </div>
+</div>
+
+<!-- Health Concern / Symptom Guidance Section -->
+<div class="card" style="margin-bottom: 24px; background:linear-gradient(to right, #f0fdfa, #eff6ff);">
+  <h3 style="font-size:1.15rem; color:var(--slate-900); margin-bottom:6px;">
+    💡 Navigational Department Helper
+  </h3>
+  <p style="font-size:0.9rem; color:var(--slate-600); margin-bottom:12px;">
+    Select your primary presenting concern below to navigate directly to relevant clinical departments.
+  </p>
+
+  <div style="display:flex; gap:8px; flex-wrap:wrap;">
+    {% for c in concerns_map %}
+      <a href="?concern={{ c.id }}" 
+         class="btn btn-sm {% if selected_concern == c.id %}btn-primary{% else %}btn-outline{% endif %}"
+         style="border-radius:9999px; font-size:0.84rem;">
+        {{ c.title }}
+      </a>
+    {% endfor %}
+    {% if selected_concern %}
+      <a href="{% url 'find_doctors' %}" class="btn btn-sm btn-outline" style="border-radius:9999px; color:#dc2626;">
+        ✕ Clear Filter
+      </a>
+    {% endif %}
+  </div>
+
+  {% if matched_concern %}
+    <div style="margin-top:14px; padding:10px 14px; background:var(--white); border-radius:var(--radius-sm); border:1px solid var(--slate-200); font-size:0.88rem;">
+      🎯 Recommended Department: <strong>{{ matched_concern.specialization }}</strong> &bull; 
+      <span style="color:var(--slate-500);">Typical symptoms: {{ matched_concern.description }}</span>
+    </div>
+  {% endif %}
+
+  <!-- Required Clinical Disclaimer -->
+  <div class="clinical-disclaimer-box" style="margin-top:14px; margin-bottom:0;">
+    <strong>Notice: Non-Diagnostic Advisory</strong>
+    The specialization suggestion feature is designed exclusively to assist you in navigating appropriate clinical departments. It does not diagnose diseases, formulate clinical assessments, or substitute for professional medical evaluation.
+  </div>
+</div>
+
+<!-- Search & Filter Bar -->
+<div class="filter-bar">
+  <form method="GET" class="filter-bar-grid">
+    <div class="form-group" style="margin-bottom:0;">
+      <label for="id-q">Search by Doctor Name or Specialty</label>
+      <input type="text" name="q" id="id-q" value="{{ query }}" placeholder="e.g. Dr. Jane, Cardiology" class="form-control">
+    </div>
+
+    <div class="form-group" style="margin-bottom:0;">
+      <label for="id-specialization">Medical Specialization</label>
+      <select name="specialization" id="id-specialization" class="form-control">
+        <option value="">All Specializations</option>
+        {% for spec in specializations %}
+          <option value="{{ spec }}" {% if selected_specialization == spec %}selected{% endif %}>{{ spec }}</option>
+        {% endfor %}
+      </select>
+    </div>
+
+    <div class="form-group" style="margin-bottom:0;">
+      <label for="id-max-fee">Max Consultation Fee ($)</label>
+      <input type="number" name="max_fee" id="id-max-fee" value="{{ max_fee }}" placeholder="e.g. 500" class="form-control">
+    </div>
+
+    <div style="display:flex; gap:8px;">
+      <button type="submit" class="btn btn-primary" style="flex:1;">Filter</button>
+      <a href="{% url 'find_doctors' %}" class="btn btn-outline">Reset</a>
+    </div>
+  </form>
+</div>
+
+<!-- Doctor Results Listing -->
+<div class="cards-grid">
+  {% for doctor in doctors %}
+    <div class="card" style="display:flex; flex-direction:column; justify-content:space-between;">
+      <div>
+        <div style="display:flex; justify-content:space-between; align-items:flex-start; margin-bottom:12px;">
+          <div>
+            <h2 style="font-size:1.25rem; font-weight:800; color:var(--slate-900);">
+              Dr. {{ doctor.user.get_full_name }}
+            </h2>
+            <span style="font-size:0.85rem; font-weight:700; color:var(--primary-teal); background:var(--primary-teal-light); padding:3px 10px; border-radius:9999px; display:inline-block; margin-top:4px;">
+              {{ doctor.specialization }}
+            </span>
+          </div>
+          <div style="text-align:right;">
+            <div style="font-size:1.3rem; font-weight:800; color:var(--slate-900);">${{ doctor.consultation_fee }}</div>
+            <div style="font-size:0.75rem; color:var(--slate-500);">Per Consultation</div>
+          </div>
+        </div>
+
+        <div style="margin-bottom:14px; font-size:0.88rem; color:var(--slate-600); line-height:1.5;">
+          <p>🎓 <strong>Qualifications:</strong> {{ doctor.qualification }}</p>
+          <p>📜 <strong>Registration No:</strong> {{ doctor.registration_number }}</p>
+          <p>⏳ <strong>Experience:</strong> {{ doctor.experience_years }} years in practice</p>
+          <p>🏥 <strong>Hospital:</strong> {{ DEFAULT_HOSPITAL_NAME }}</p>
+          <p>🗓️ <strong>Consultation Days:</strong> {{ doctor.available_days }}</p>
+        </div>
+
+        <div style="background:var(--slate-50); padding:10px 12px; border-radius:var(--radius-sm); margin-bottom:18px; font-size:0.82rem; color:var(--slate-700);">
+          ⏰ <strong>Standard Hours:</strong> {{ doctor.availability_summary }}
+        </div>
+      </div>
+
+      <div>
+        <a href="{% url 'book_appointment' doctor.id %}" class="btn btn-primary" style="width:100%; padding:10px;">
+          📅 Select Slot & Book Appointment &rarr;
+        </a>
+      </div>
+    </div>
+  {% empty %}
+    <div class="card" style="grid-column: 1 / -1; text-align:center; padding:50px;">
+      <h3 style="color:var(--slate-800); margin-bottom:8px;">No Specialists Matched Your Query</h3>
+      <p style="color:var(--slate-500); margin-bottom:16px;">Try adjusting your specialization filter or search keywords.</p>
+      <a href="{% url 'find_doctors' %}" class="btn btn-outline">Clear All Filters</a>
+    </div>
+  {% endfor %}
+</div>
+{% endblock %}

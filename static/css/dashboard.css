@@ -1,0 +1,268 @@
+/* SmartCare Dashboard Styles */
+
+.dashboard-header {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  margin-bottom: 24px;
+  flex-wrap: wrap;
+  gap: 16px;
+}
+.dashboard-header h1 {
+  font-size: 1.85rem;
+  font-weight: 800;
+  color: var(--slate-900);
+}
+.dashboard-subtitle {
+  color: var(--slate-500);
+  font-size: 0.95rem;
+  margin-top: 4px;
+}
+
+/* Metric / Stat Cards */
+.metrics-row {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(210px, 1fr));
+  gap: 16px;
+  margin-bottom: 28px;
+}
+.stat-card {
+  background: var(--white);
+  border: 1px solid var(--slate-200);
+  border-radius: var(--radius-md);
+  padding: 18px 20px;
+  box-shadow: var(--shadow-sm);
+  display: flex;
+  flex-direction: column;
+}
+.stat-card-title {
+  font-size: 0.85rem;
+  font-weight: 600;
+  color: var(--slate-500);
+  text-transform: uppercase;
+  letter-spacing: 0.5px;
+  margin-bottom: 8px;
+}
+.stat-card-value {
+  font-size: 1.9rem;
+  font-weight: 800;
+  color: var(--slate-900);
+}
+.stat-card-desc {
+  font-size: 0.82rem;
+  color: var(--slate-500);
+  margin-top: 6px;
+}
+.stat-card.critical {
+  border-left: 5px solid var(--priority-1-critical);
+}
+.stat-card.urgent {
+  border-left: 5px solid var(--priority-2-urgent);
+}
+.stat-card.less-urgent {
+  border-left: 5px solid var(--priority-3-less);
+}
+.stat-card.primary {
+  border-left: 5px solid var(--primary-teal);
+}
+
+/* Time to Leave Banner */
+.time-to-leave-banner {
+  background: linear-gradient(135deg, #b91c1c 0%, #dc2626 100%);
+  color: #ffffff;
+  border-radius: var(--radius-md);
+  padding: 18px 24px;
+  margin-bottom: 24px;
+  box-shadow: var(--shadow-md);
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  gap: 16px;
+  animation: pulse-leave 2.5s infinite;
+}
+@keyframes pulse-leave {
+  0% { transform: scale(1); }
+  50% { transform: scale(1.006); }
+  100% { transform: scale(1); }
+}
+.time-to-leave-content h3 {
+  font-size: 1.3rem;
+  font-weight: 800;
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  margin-bottom: 4px;
+}
+.time-to-leave-content p {
+  font-size: 0.95rem;
+  opacity: 0.95;
+}
+
+/* Tables */
+.table-responsive {
+  width: 100%;
+  overflow-x: auto;
+  background: var(--white);
+  border: 1px solid var(--slate-200);
+  border-radius: var(--radius-md);
+  box-shadow: var(--shadow-sm);
+  margin-bottom: 28px;
+}
+.dashboard-table {
+  width: 100%;
+  border-collapse: collapse;
+  text-align: left;
+  font-size: 0.92rem;
+}
+.dashboard-table th {
+  background: var(--slate-100);
+  color: var(--slate-700);
+  font-weight: 700;
+  padding: 14px 18px;
+  border-bottom: 1px solid var(--slate-200);
+  text-transform: uppercase;
+  font-size: 0.78rem;
+  letter-spacing: 0.5px;
+}
+.dashboard-table td {
+  padding: 14px 18px;
+  border-bottom: 1px solid var(--slate-200);
+  color: var(--slate-800);
+  vertical-align: middle;
+}
+.dashboard-table tbody tr:hover {
+  background-color: var(--slate-50);
+}
+
+/* Priority Queue Row Highlights */
+.row-priority-1 {
+  background-color: rgba(254, 242, 242, 0.6) !important;
+  border-left: 4px solid var(--priority-1-critical) !important;
+}
+.row-priority-2 {
+  background-color: rgba(255, 251, 235, 0.6) !important;
+  border-left: 4px solid var(--priority-2-urgent) !important;
+}
+.row-priority-3 {
+  background-color: rgba(236, 253, 245, 0.6) !important;
+  border-left: 4px solid var(--priority-3-less) !important;
+}
+
+/* Waiting Time Tracker */
+.waiting-badge {
+  display: inline-flex;
+  align-items: center;
+  gap: 4px;
+  font-weight: 700;
+  font-size: 0.85rem;
+  padding: 4px 10px;
+  border-radius: 9999px;
+  background: var(--slate-100);
+  color: var(--slate-700);
+}
+.waiting-badge.long-wait {
+  background: #fef2f2;
+  color: #dc2626;
+}
+
+/* Journey Detail Component */
+.journey-card {
+  background: var(--white);
+  border: 1px solid var(--slate-200);
+  border-radius: var(--radius-lg);
+  padding: 28px;
+  box-shadow: var(--shadow-md);
+  margin-bottom: 28px;
+}
+.journey-timeline {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  margin: 28px 0;
+  position: relative;
+  flex-wrap: wrap;
+  gap: 16px;
+}
+.journey-step {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  text-align: center;
+  flex: 1;
+  min-width: 140px;
+  z-index: 1;
+}
+.journey-step-icon {
+  width: 48px;
+  height: 48px;
+  border-radius: 50%;
+  background: var(--primary-teal-light);
+  color: var(--primary-teal-dark);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-size: 1.4rem;
+  margin-bottom: 8px;
+  border: 2px solid var(--primary-teal);
+}
+.journey-step.active .journey-step-icon {
+  background: var(--primary-teal);
+  color: var(--white);
+}
+.journey-step-time {
+  font-size: 1.15rem;
+  font-weight: 800;
+  color: var(--slate-900);
+}
+.journey-step-label {
+  font-size: 0.82rem;
+  color: var(--slate-500);
+  font-weight: 600;
+}
+
+/* Modals */
+.modal-overlay {
+  display: none;
+  position: fixed;
+  top: 0;
+  left: 0;
+  right: 0;
+  bottom: 0;
+  background: rgba(15, 23, 42, 0.6);
+  z-index: 1000;
+  align-items: center;
+  justify-content: center;
+  padding: 20px;
+}
+.modal-overlay.open {
+  display: flex;
+}
+.modal-content {
+  background: var(--white);
+  border-radius: var(--radius-md);
+  max-width: 560px;
+  width: 100%;
+  padding: 28px;
+  box-shadow: var(--shadow-lg);
+  position: relative;
+}
+.modal-header {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  margin-bottom: 20px;
+}
+.modal-header h3 {
+  font-size: 1.3rem;
+  color: var(--slate-900);
+}
+.modal-close-btn {
+  background: none;
+  border: none;
+  font-size: 1.5rem;
+  cursor: pointer;
+  color: var(--slate-400);
+}
+.modal-close-btn:hover {
+  color: var(--slate-700);
+}

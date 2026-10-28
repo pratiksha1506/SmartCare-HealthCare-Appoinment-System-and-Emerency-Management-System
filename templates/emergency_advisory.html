@@ -1,0 +1,118 @@
+{% extends 'base.html' %}
+{% load static %}
+
+{% block title %}Emergency Medical Assistance | {{ hospital_name }}{% endblock %}
+
+{% block content %}
+<div class="dashboard-header">
+  <div>
+    <h1 style="color:#b91c1c; display:flex; align-items:center; gap:10px;">
+      🚨 Hospital Emergency Care & Triage Guidance
+    </h1>
+    <p class="dashboard-subtitle">
+      {{ hospital_name }} &bull; Emergency Department Advisory & Immediate Assistance
+    </p>
+  </div>
+  <a href="{% url 'find_doctors' %}" class="btn btn-outline btn-sm">
+    &larr; Switch to Routine Doctor Appointments
+  </a>
+</div>
+
+<!-- Critical Warning Banner -->
+<div class="clinical-disclaimer-box" style="border-left-color: #dc2626; background:#fef2f2; color:#991b1b; padding:20px; font-size:1rem;">
+  <h3 style="font-size:1.25rem; font-weight:800; margin-bottom:8px; color:#b91c1c;">
+    DO NOT WAIT FOR A ROUTINE APPOINTMENT
+  </h3>
+  <p style="margin-bottom:12px; line-height:1.5;">
+    If you or someone in your care is experiencing symptoms of a potential life-threatening emergency, 
+    <strong>call local emergency services (911 / 112) immediately</strong> or proceed directly to our Emergency Department.
+  </p>
+  <ul style="margin-left:24px; margin-bottom:12px; font-size:0.92rem; line-height:1.6;">
+    <li>Crushing chest pain, left arm pain, or severe heart palpitations</li>
+    <li>Sudden weakness, facial droop, numbness, or difficulty speaking (Stroke signs)</li>
+    <li>Severe shortness of breath, choking, or inability to breathe</li>
+    <li>Major traumatic injury, uncontrolled bleeding, or suspected bone fractures</li>
+    <li>Loss of consciousness, seizures, or acute severe allergic reactions (Anaphylaxis)</li>
+  </ul>
+</div>
+
+<!-- Hospital Emergency Location & Hotline Card -->
+<div class="cards-grid" style="margin-bottom:32px;">
+  <div class="card" style="border-left:5px solid #dc2626;">
+    <h3 style="font-size:1.15rem; color:var(--slate-900); margin-bottom:8px;">📞 24/7 Emergency Hotline</h3>
+    <p style="font-size:1.6rem; font-weight:800; color:#dc2626; margin-bottom:6px;">
+      <a href="tel:+91 8932643310" style="color:#dc2626; text-decoration:none;">+91 8932643310</a>
+    </p>
+    <p style="font-size:0.85rem; color:var(--slate-600);">
+      Dedicated direct line to our Emergency Triage Resuscitation Desk. Available 24 hours a day, 7 days a week.
+    </p>
+  </div>
+
+  <div class="card" style="border-left:5px solid var(--primary-teal);">
+    <h3 style="font-size:1.15rem; color:var(--slate-900); margin-bottom:8px;">🏥 Emergency Facility Entrance</h3>
+    <p style="font-weight:700; color:var(--slate-900); margin-bottom:4px;">
+      {{ emergency_dept }}
+    </p>
+    <p style="font-size:0.9rem; color:var(--slate-600); margin-bottom:6px;">
+      📍Near Shridevi College,Lingapura,Tumkuru
+    </p>
+    <p style="font-size:0.82rem; color:var(--slate-500);">
+      Ambulance bays, trauma triage, and rapid assessment walk-in entrance are open continuously.
+    </p>
+  </div>
+</div>
+
+<!-- Clinical Priority Notice -->
+<div class="card" style="margin-bottom:32px; background:var(--slate-50);">
+  <h3 style="font-size:1.15rem; color:var(--slate-900); margin-bottom:8px;">
+    ⚖️ Clinical Triage & Urgency Assessment Protocol
+  </h3>
+  <p style="font-size:0.92rem; color:var(--slate-600); line-height:1.6; margin-bottom:12px;">
+    To ensure patient safety, <strong>patients do not assign themselves a clinical priority</strong>. 
+    Qualified emergency medical personnel perform a physiological clinical assessment upon your arrival 
+    and assign an objective triage category:
+  </p>
+  <div style="display:flex; gap:16px; flex-wrap:wrap;">
+    <div style="background:#fef2f2; border:1px solid #fecaca; border-radius:var(--radius-sm); padding:10px 14px; flex:1; min-width:200px;">
+      <span class="badge-priority-1">Critical (Red)</span>
+      <p style="font-size:0.82rem; color:#991b1b; margin-top:6px;">Immediate resuscitation, airway or cardiovascular threat.</p>
+    </div>
+    <div style="background:#fffbeb; border:1px solid #fde68a; border-radius:var(--radius-sm); padding:10px 14px; flex:1; min-width:200px;">
+      <span class="badge-priority-2">Urgent (Orange)</span>
+      <p style="font-size:0.82rem; color:#92400e; margin-top:6px;">Severe pain, acute distress, potential rapid deterioration.</p>
+    </div>
+    <div style="background:#ecfdf5; border:1px solid #a7f3d0; border-radius:var(--radius-sm); padding:10px 14px; flex:1; min-width:200px;">
+      <span class="badge-priority-3">Less Urgent (Green)</span>
+      <p style="font-size:0.82rem; color:#065f46; margin-top:6px;">Stable emergency presentations and standard clinical care.</p>
+    </div>
+  </div>
+</div>
+
+<!-- Optional Patient Symptom Report (If Authenticated Patient) -->
+{% if user.is_authenticated and user.is_patient and form %}
+  <div class="form-card" style="margin:0 auto;">
+    <h3 style="font-size:1.2rem; color:var(--slate-900); margin-bottom:6px;">
+      📝 Notify Emergency Triage of Your Incoming Arrival
+    </h3>
+    <p style="font-size:0.88rem; color:var(--slate-600); margin-bottom:16px;">
+      If you are en route to {{ hospital_name }}, you may report your presenting symptoms below. 
+      <em>Note: Clinical staff will evaluate your vitals and confirm triage priority upon arrival.</em>
+    </p>
+
+    <form method="POST">
+      {% csrf_token %}
+      <div class="form-group">
+        <label for="{{ form.symptoms.id_for_label }}">Presenting Symptoms Description *</label>
+        {{ form.symptoms }}
+      </div>
+      <div class="form-group">
+        <label for="{{ form.contact_phone.id_for_label }}">Best Callback Telephone *</label>
+        {{ form.contact_phone }}
+      </div>
+      <button type="submit" class="btn btn-danger" style="width:100%; padding:12px; font-size:1.05rem;">
+        Submit Arrival Notification & Proceed to Emergency Room &rarr;
+      </button>
+    </form>
+  </div>
+{% endif %}
+{% endblock %}

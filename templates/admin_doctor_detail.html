@@ -1,0 +1,111 @@
+{% extends 'base.html' %}
+{% load static %}
+
+{% block title %}Doctor Details - Dr. {{ doctor.user.get_full_name }} | {{ hospital_name }}{% endblock %}
+
+{% block content %}
+<div class="dashboard-header">
+  <div>
+    <a href="{% url 'admin_doctor_list' %}" style="color:var(--primary-teal); text-decoration:none; font-size:0.9rem; font-weight:600;">
+      &larr; Back to Doctor Directory
+    </a>
+    <h1 style="font-size: 1.8rem; color: var(--slate-900); margin-top: 8px; font-weight: 800;">
+      Dr. {{ doctor.user.get_full_name }} ({{ doctor.specialization }})
+    </h1>
+    <p class="dashboard-subtitle">
+      {{ hospital_name }} &bull; License: <code>{{ doctor.registration_number }}</code>
+    </p>
+  </div>
+
+  <div style="display:flex; gap:10px; align-items:center;">
+    <a href="{% url 'admin_doctor_edit' doctor.id %}" class="btn btn-outline">✏️ Edit Profile</a>
+    <a href="{% url 'admin_doctor_password_reset' doctor.id %}" class="btn btn-outline">🔑 Reset Password</a>
+    <form method="POST" action="{% url 'admin_doctor_toggle_status' doctor.id %}" style="display:inline;">
+      {% csrf_token %}
+      {% if doctor.is_active %}
+        <button type="submit" class="btn btn-danger btn-sm">Deactivate</button>
+      {% else %}
+        <button type="submit" class="btn btn-primary btn-sm">Activate</button>
+      {% endif %}
+    </form>
+  </div>
+</div>
+
+<div class="cards-grid" style="margin-bottom: 28px;">
+  <div class="card">
+    <h3 style="font-size:1.1rem; color:var(--slate-900); margin-bottom:12px;">Medical Credentials & Profile</h3>
+    <div style="font-size:0.9rem; line-height:1.7; color:var(--slate-700);">
+      <div><strong>Full Name:</strong> Dr. {{ doctor.user.get_full_name }}</div>
+      <div><strong>Email:</strong> {{ doctor.user.email }}</div>
+      <div><strong>Contact Phone:</strong> {{ doctor.user.contact_number|default:"Not recorded" }}</div>
+      <div><strong>Specialization:</strong> {{ doctor.specialization }}</div>
+      <div><strong>Qualifications:</strong> {{ doctor.qualification }}</div>
+      <div><strong>Registration Number:</strong> <code>{{ doctor.registration_number }}</code></div>
+      <div><strong>Experience:</strong> {{ doctor.experience_years }} years</div>
+    </div>
+  </div>
+
+  <div class="card">
+    <h3 style="font-size:1.1rem; color:var(--slate-900); margin-bottom:12px;">Consultation Schedule & Practice</h3>
+    <div style="font-size:0.9rem; line-height:1.7; color:var(--slate-700);">
+      <div><strong>Consultation Fee:</strong> ${{ doctor.consultation_fee }} per slot</div>
+      <div><strong>Slot Duration:</strong> {{ doctor.slot_duration_minutes }} minutes</div>
+      <div><strong>Working Hours:</strong> {{ doctor.work_start_time|time:"h:i A" }} - {{ doctor.work_end_time|time:"h:i A" }}</div>
+      <div><strong>Available Days:</strong> {{ doctor.available_days }}</div>
+      <div>
+        <strong>Directory Status:</strong> 
+        {% if doctor.is_active %}
+          <span class="badge-status status-confirmed">Active (Accepting Bookings)</span>
+        {% else %}
+          <span class="badge-status status-cancelled">Inactive (Bookings Paused)</span>
+        {% endif %}
+      </div>
+      <div><strong>Hospital:</strong> {{ doctor.hospital_name }}</div>
+    </div>
+  </div>
+</div>
+
+<section>
+  <h2 style="font-size:1.35rem; color:var(--slate-900); margin-bottom:14px;">
+    Assigned Patient Appointments ({{ appointments|length }})
+  </h2>
+
+  <div class="table-responsive">
+    <table class="dashboard-table">
+      <thead>
+        <tr>
+          <th>Date & Time</th>
+          <th>Patient Name</th>
+          <th>Reason</th>
+          <th>Status</th>
+          <th>Action</th>
+        </tr>
+      </thead>
+      <tbody>
+        {% for apt in appointments %}
+          <tr>
+            <td>
+              <strong>{{ apt.appointment_date|date:"M d, Y" }}</strong> &bull; {{ apt.appointment_time|time:"h:i A" }}
+            </td>
+            <td>
+              <strong>{{ apt.patient.user.get_full_name }}</strong>
+              <div style="font-size:0.78rem; color:var(--slate-500);">📞 {{ apt.patient.user.contact_number|default:"No phone" }}</div>
+            </td>
+            <td>{{ apt.get_consultation_reason_display }}</td>
+            <td><span class="badge-status status-{{ apt.status|lower }}">{{ apt.get_status_display }}</span></td>
+            <td>
+              <a href="{% url 'appointment_detail' apt.id %}" class="btn btn-sm btn-outline">View Details</a>
+            </td>
+          </tr>
+        {% empty %}
+          <tr>
+            <td colspan="5" style="text-align:center; padding:32px; color:var(--slate-500);">
+              No appointments scheduled with Dr. {{ doctor.user.get_full_name }} yet.
+            </td>
+          </tr>
+        {% endfor %}
+      </tbody>
+    </table>
+  </div>
+</section>
+{% endblock %}

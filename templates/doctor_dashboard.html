@@ -1,0 +1,313 @@
+{% extends 'base.html' %}
+{% load static %}
+
+{% block title %}Doctor Dashboard | Dr. {{ doctor_profile.user.get_full_name }} | {{ DEFAULT_HOSPITAL_NAME }}{% endblock %}
+
+{% block content %}
+<div class="dashboard-header">
+  <div>
+    <h1>Clinician Dashboard: Dr. {{ doctor_profile.user.get_full_name }}</h1>
+    <p class="dashboard-subtitle">
+      {{ doctor_profile.specialization }} &bull; {{ DEFAULT_HOSPITAL_NAME }} &bull; {{ today|date:"l, F d, Y" }}
+    </p>
+  </div>
+  <div style="display:flex; gap:10px; flex-wrap:wrap;">
+    <a href="{% url 'doctor_availability' %}" class="btn btn-outline btn-sm">
+      ⏰ Edit My Availability
+    </a>
+    <button type="button" class="btn btn-danger btn-sm" data-modal-open="disruption-modal">
+      🚨 Record Emergency Delay
+    </button>
+  </div>
+</div>
+
+<div class="card" style="margin-bottom:24px; background:linear-gradient(to right, #f0fdfa, #eff6ff);">
+  <div style="display:flex; justify-content:space-between; align-items:center; flex-wrap:wrap; gap:12px;">
+    <div>
+      <h3 style="font-size:1.05rem; color:var(--slate-900); margin-bottom:2px;">
+        👨‍⚕️ My Consultation Schedule & Roster
+      </h3>
+      <p style="font-size:0.85rem; color:var(--slate-600);">
+        Consulting Days: <strong>{{ doctor_profile.available_days }}</strong> &bull; 
+        Hours: <strong>{{ doctor_profile.work_start_time|time:"h:i A" }} - {{ doctor_profile.work_end_time|time:"h:i A" }}</strong> ({{ doctor_profile.slot_duration_minutes }}m slots) &bull;
+        Fee: <strong>${{ doctor_profile.consultation_fee }}</strong>
+      </p>
+    </div>
+    <div>
+      {% if doctor_profile.is_active %}
+        <span class="badge-status status-confirmed">Active (Open for Bookings)</span>
+      {% else %}
+        <span class="badge-status status-cancelled">Inactive (Bookings Paused)</span>
+      {% endif %}
+    </div>
+  </div>
+</div>
+
+<!-- Today's Scheduled Consultations (Strictly for this Doctor) -->
+<section style="margin-bottom: 36px;">
+  <div style="display:flex; justify-content:space-between; align-items:center; margin-bottom:14px;">
+    <h2 style="font-size:1.35rem; color:var(--slate-900);">
+      📅 My Consultations for Today ({{ today_appointments.count }})
+    </h2>
+    <span style="font-size:0.82rem; color:var(--slate-500);">Hospital: {{ DEFAULT_HOSPITAL_NAME }}</span>
+  </div>
+
+  <div class="table-responsive">
+    <table class="dashboard-table">
+      <thead>
+        <tr>
+          <th>Slot Time</th>
+          <th>Patient Name</th>
+          <th>Age / Contact</th>
+          <th>Reason & Symptoms</th>
+          <th>Status</th>
+          <th>Clinical Actions</th>
+        </tr>
+      </thead>
+      <tbody>
+        {% for apt in today_appointments %}
+          <tr>
+            <td>
+              <strong style="font-size:1.05rem; color:var(--primary-teal-dark);">
+                {{ apt.appointment_time|time:"h:i A" }}
+              </strong>
+              <div style="font-size:0.75rem; color:var(--slate-500);">{{ apt.expected_duration_minutes }}m slot</div>
+            </td>
+            <td>
+              <strong>{{ apt.patient.user.get_full_name }}</strong>
+            </td>
+            <td>
+              {% if apt.patient.date_of_birth %}DOB: {{ apt.patient.date_of_birth|date:"Y-m-d" }}<br>{% endif %}
+              <span style="font-size:0.82rem; color:var(--slate-500);">📞 {{ apt.patient.user.contact_number|default:"N/A" }}</span>
+            </td>
+            <td>
+              <div style="font-weight:600; font-size:0.85rem; color:var(--slate-800);">
+                {{ apt.get_consultation_reason_display }}
+              </div>
+              {% if apt.symptoms_description %}
+                <div style="font-size:0.78rem; color:var(--slate-500);">
+                  {{ apt.symptoms_description|truncatechars:45 }}
+                </div>
+              {% endif %}
+            </td>
+            <td>
+              <span class="badge-status status-{{ apt.status|lower }}">{{ apt.get_status_display }}</span>
+              {% if apt.delayed_by_minutes > 0 %}
+                <div style="font-size:0.75rem; color:#b45309; font-weight:700;">(+{{ apt.delayed_by_minutes }}m emergency delay)</div>
+              {% endif %}
+            </td>
+            <td>
+              <div style="display:flex; gap:6px; flex-wrap:wrap; align-items:center;">
+                <a href="{% url 'doctor_consultation' apt.id %}" class="btn btn-sm btn-primary" style="background:#0d9488; border-color:#0d9488;" title="Open consultation & patient record">
+                  🩺 Consultation
+                </a>
+                {% if apt.status == 'SCHEDULED' or apt.status == 'CONFIRMED' %}
+                  <form method="POST" action="{% url 'check_in_appointment' apt.id %}" style="display:inline;">
+                    {% csrf_token %}
+                    <button type="submit" class="btn btn-sm btn-outline" style="color:#d97706; border-color:#fcd34d;" title="Mark patient as checked in">
+                      Check In
+                    </button>
+                  </form>
+                {% endif %}
+                <a href="{% url 'appointment_detail' apt.id %}" class="btn btn-sm btn-outline">Details</a>
+              </div>
+            </td>
+          </tr>
+        {% empty %}
+          <tr>
+            <td colspan="6" style="text-align:center; padding:32px; color:var(--slate-500);">
+              You have no appointments scheduled for today.
+            </td>
+          </tr>
+        {% endfor %}
+      </tbody>
+    </table>
+  </div>
+</section>
+
+<!-- Upcoming Consultations (Strictly for this Doctor) -->
+<section style="margin-bottom: 36px;">
+  <h2 style="font-size:1.3rem; color:var(--slate-900); margin-bottom:14px;">
+    🗓️ My Upcoming Schedule (Next 14 Days)
+  </h2>
+  <div class="table-responsive">
+    <table class="dashboard-table">
+      <thead>
+        <tr>
+          <th>Date</th>
+          <th>Time</th>
+          <th>Patient</th>
+          <th>Contact</th>
+          <th>Reason</th>
+          <th>Status</th>
+          <th>Action</th>
+        </tr>
+      </thead>
+      <tbody>
+        {% for apt in upcoming_appointments %}
+          <tr>
+            <td><strong>{{ apt.appointment_date|date:"D, M d, Y" }}</strong></td>
+            <td>{{ apt.appointment_time|time:"h:i A" }}</td>
+            <td>{{ apt.patient.user.get_full_name }}</td>
+            <td>{{ apt.patient.user.contact_number|default:"--" }}</td>
+            <td>{{ apt.get_consultation_reason_display }}</td>
+            <td><span class="badge-status status-{{ apt.status|lower }}">{{ apt.get_status_display }}</span></td>
+            <td>
+              <div style="display:flex; gap:6px;">
+                <a href="{% url 'doctor_consultation' apt.id %}" class="btn btn-sm btn-outline">Record</a>
+                <a href="{% url 'appointment_detail' apt.id %}" class="btn btn-sm btn-outline">View</a>
+              </div>
+            </td>
+          </tr>
+        {% empty %}
+          <tr>
+            <td colspan="7" style="text-align:center; padding:24px; color:var(--slate-500);">
+              No future appointments booked.
+            </td>
+          </tr>
+        {% endfor %}
+      </tbody>
+    </table>
+  </div>
+</section>
+
+<!-- Completed Consultations -->
+<section style="margin-bottom: 36px;">
+  <h2 style="font-size:1.3rem; color:var(--slate-900); margin-bottom:14px;">
+    ✓ Completed Consultations ({{ completed_appointments|length }})
+  </h2>
+  <div class="table-responsive">
+    <table class="dashboard-table">
+      <thead>
+        <tr>
+          <th>Date</th>
+          <th>Time</th>
+          <th>Patient</th>
+          <th>Diagnosis / Notes</th>
+          <th>Prescription</th>
+          <th>Actions</th>
+        </tr>
+      </thead>
+      <tbody>
+        {% for apt in completed_appointments %}
+          <tr>
+            <td><strong>{{ apt.appointment_date|date:"M d, Y" }}</strong></td>
+            <td>{{ apt.appointment_time|time:"h:i A" }}</td>
+            <td><strong>{{ apt.patient.user.get_full_name }}</strong></td>
+            <td>
+              {% if apt.consultation_record and apt.consultation_record.diagnosis %}
+                <div style="font-weight:600; color:#0f766e; font-size:0.85rem;">
+                  {{ apt.consultation_record.diagnosis }}
+                </div>
+              {% else %}
+                <span style="color:var(--slate-400); font-size:0.82rem;">Completed</span>
+              {% endif %}
+            </td>
+            <td>
+              {% if apt.consultation_record and apt.consultation_record.prescribed_medications %}
+                <div style="font-size:0.8rem; color:var(--slate-600); max-width:200px; white-space:nowrap; overflow:hidden; text-overflow:ellipsis;">
+                  💊 {{ apt.consultation_record.prescribed_medications }}
+                </div>
+              {% else %}
+                <span style="color:var(--slate-400); font-size:0.8rem;">None recorded</span>
+              {% endif %}
+            </td>
+            <td>
+              <div style="display:flex; gap:6px;">
+                <a href="{% url 'doctor_consultation' apt.id %}" class="btn btn-sm btn-outline">Consultation Record</a>
+                <a href="{% url 'appointment_detail' apt.id %}" class="btn btn-sm btn-outline">Details</a>
+              </div>
+            </td>
+          </tr>
+        {% empty %}
+          <tr>
+            <td colspan="6" style="text-align:center; padding:24px; color:var(--slate-500);">
+              No completed consultations yet.
+            </td>
+          </tr>
+        {% endfor %}
+      </tbody>
+    </table>
+  </div>
+</section>
+
+<!-- Cancelled Appointments -->
+<section style="margin-bottom: 36px;">
+  <h2 style="font-size:1.3rem; color:var(--slate-900); margin-bottom:14px;">
+    🚫 Cancelled Appointments ({{ cancelled_appointments|length }})
+  </h2>
+  <div class="table-responsive">
+    <table class="dashboard-table">
+      <thead>
+        <tr>
+          <th>Scheduled Date</th>
+          <th>Time</th>
+          <th>Patient</th>
+          <th>Reason</th>
+          <th>Status</th>
+          <th>Action</th>
+        </tr>
+      </thead>
+      <tbody>
+        {% for apt in cancelled_appointments %}
+          <tr>
+            <td>{{ apt.appointment_date|date:"M d, Y" }}</td>
+            <td>{{ apt.appointment_time|time:"h:i A" }}</td>
+            <td>{{ apt.patient.user.get_full_name }}</td>
+            <td>{{ apt.get_consultation_reason_display }}</td>
+            <td><span class="badge-status status-cancelled">Cancelled</span></td>
+            <td>
+              <a href="{% url 'appointment_detail' apt.id %}" class="btn btn-sm btn-outline">Details</a>
+            </td>
+          </tr>
+        {% empty %}
+          <tr>
+            <td colspan="6" style="text-align:center; padding:24px; color:var(--slate-500);">
+              No cancelled appointments.
+            </td>
+          </tr>
+        {% endfor %}
+      </tbody>
+    </table>
+  </div>
+</section>
+
+<!-- Record Schedule Disruption Modal -->
+<div id="disruption-modal" class="modal-overlay">
+  <div class="modal-content">
+    <div class="modal-header">
+      <h3 style="color:#b91c1c;">🚨 Record Emergency Schedule Delay</h3>
+      <button type="button" class="modal-close-btn" data-modal-close>&times;</button>
+    </div>
+    
+    <p style="font-size:0.88rem; color:var(--slate-600); margin-bottom:16px;">
+      When an acute emergency requires your immediate clinical attention, record the delay below. 
+      Your upcoming appointments today at or after the disruption time will be marked as 
+      <code>DELAYED_BY_EMERGENCY</code>, and patients will receive updated departure advice on their dashboard.
+    </p>
+
+    <form method="POST" action="{% url 'record_disruption' %}">
+      {% csrf_token %}
+      <div class="form-group">
+        <label for="{{ disruption_form.start_time.id_for_label }}">Disruption Starts From *</label>
+        {{ disruption_form.start_time }}
+      </div>
+
+      <div class="form-group">
+        <label for="{{ disruption_form.delay_minutes.id_for_label }}">Estimated Delay Duration (Minutes) *</label>
+        {{ disruption_form.delay_minutes }}
+      </div>
+
+      <div class="form-group">
+        <label for="{{ disruption_form.reason.id_for_label }}">Clinical Reason / Justification *</label>
+        {{ disruption_form.reason }}
+      </div>
+
+      <div style="display:flex; justify-content:flex-end; gap:10px; margin-top:20px;">
+        <button type="button" class="btn btn-outline" data-modal-close>Cancel</button>
+        <button type="submit" class="btn btn-danger">Apply Delay & Alert Patients</button>
+      </div>
+    </form>
+  </div>
+</div>
+{% endblock %}

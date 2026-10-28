@@ -1,0 +1,91 @@
+{% extends 'base.html' %}
+{% load static %}
+
+{% block title %}Patient Directory | {{ hospital_name }}{% endblock %}
+
+{% block content %}
+<div class="dashboard-header">
+  <div>
+    <h1>Hospital Patient Directory</h1>
+    <p class="dashboard-subtitle">
+      {{ hospital_name }} &bull; Hospital Administrator Management Portal
+    </p>
+  </div>
+  <div style="display:flex; gap:8px;">
+    <a href="{% url 'admin_doctor_list' %}" class="btn btn-outline">
+      👨‍⚕️ Doctors Directory
+    </a>
+    <a href="{% url 'admin_appointment_list' %}" class="btn btn-outline">
+      📋 All Appointments
+    </a>
+  </div>
+</div>
+
+<div class="card" style="margin-bottom: 24px; background:linear-gradient(to right, #f8fafc, #eff6ff);">
+  <p style="font-size:0.9rem; color:var(--slate-700); margin:0;">
+    Showing <strong>{{ patients|length }}</strong> registered patient accounts at <strong>{{ hospital_name }}</strong>. 
+    Patient profiles and medical records are managed securely under strict clinical role-based access control.
+  </p>
+</div>
+
+<div class="table-responsive">
+  <table class="dashboard-table">
+    <thead>
+      <tr>
+        <th>Patient Name</th>
+        <th>Email & Contact</th>
+        <th>Date of Birth & Age</th>
+        <th>Gender</th>
+        <th>Home Address</th>
+        <th>Total Consultations</th>
+        <th>Registered Date</th>
+      </tr>
+    </thead>
+    <tbody>
+      {% for patient in patients %}
+        <tr>
+          <td>
+            <strong style="color:var(--slate-900);">{{ patient.user.get_full_name|default:patient.user.username }}</strong>
+            <div style="font-size:0.78rem; color:var(--slate-500);">ID: #P-{{ patient.id }}</div>
+          </td>
+          <td>
+            <div>✉️ {{ patient.user.email }}</div>
+            {% if patient.user.contact_number %}
+              <div style="font-size:0.8rem; color:var(--slate-500);">📞 {{ patient.user.contact_number }}</div>
+            {% endif %}
+          </td>
+          <td>
+            {% if patient.date_of_birth %}
+              <div>{{ patient.date_of_birth|date:"M d, Y" }}</div>
+            {% else %}
+              <span style="color:var(--slate-400);">Not recorded</span>
+            {% endif %}
+          </td>
+          <td>
+            <span style="text-transform:capitalize;">{{ patient.gender|default:"Not specified" }}</span>
+          </td>
+          <td>
+            <div style="font-size:0.85rem; color:var(--slate-700); max-width:200px; white-space:nowrap; overflow:hidden; text-overflow:ellipsis;">
+              {{ patient.default_address|default:"—" }}
+            </div>
+          </td>
+          <td>
+            <span class="badge-status status-confirmed">
+              {{ patient.appointment_count }} appointment{{ patient.appointment_count|pluralize }}
+            </span>
+          </td>
+          <td style="font-size:0.85rem; color:var(--slate-500);">
+            {{ patient.created_at|date:"M d, Y" }}
+          </td>
+        </tr>
+      {% empty %}
+        <tr>
+          <td colspan="7" style="text-align:center; padding:48px; color:var(--slate-500);">
+            No patients registered yet.
+          </td>
+        </tr>
+      {% endfor %}
+    </tbody>
+  </table>
+</div>
+{% endblock %}

@@ -1,0 +1,119 @@
+/* SmartCare Forms Stylesheet */
+
+.form-card {
+  background: var(--white);
+  border: 1px solid var(--slate-200);
+  border-radius: var(--radius-lg);
+  padding: 36px;
+  box-shadow: var(--shadow-sm);
+  max-width: 640px;
+  margin: 0 auto 30px auto;
+}
+.form-card.wide {
+  max-width: 860px;
+}
+.form-title {
+  font-size: 1.6rem;
+  font-weight: 800;
+  color: var(--slate-900);
+  margin-bottom: 8px;
+}
+.form-description {
+  color: var(--slate-500);
+  font-size: 0.95rem;
+  margin-bottom: 24px;
+}
+
+.form-group {
+  margin-bottom: 20px;
+}
+.form-group label {
+  display: block;
+  font-weight: 600;
+  font-size: 0.92rem;
+  color: var(--slate-700);
+  margin-bottom: 6px;
+}
+.form-control {
+  width: 100%;
+  padding: 10px 14px;
+  font-size: 0.95rem;
+  font-family: inherit;
+  color: var(--slate-800);
+  background-color: var(--white);
+  border: 1px solid var(--slate-300);
+  border-radius: var(--radius-sm);
+  transition: border-color 0.15s ease, box-shadow 0.15s ease;
+}
+.form-control:focus {
+  outline: none;
+  border-color: var(--primary-teal);
+  box-shadow: 0 0 0 3px rgba(13, 148, 136, 0.18);
+}
+textarea.form-control {
+  resize: vertical;
+}
+
+.form-help-text {
+  font-size: 0.82rem;
+  color: var(--slate-500);
+  margin-top: 4px;
+}
+.form-error-text {
+  font-size: 0.82rem;
+  color: #dc2626;
+  margin-top: 4px;
+  font-weight: 600;
+}
+
+.form-row {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 16px;
+}
+@media (max-width: 600px) {
+  .form-row {
+    grid-template-columns: 1fr;
+  }
+}
+
+/* Location Selector Box */
+.location-input-box {
+  background: var(--slate-50);
+  border: 1px dashed var(--primary-teal);
+  border-radius: var(--radius-md);
+  padding: 16px;
+  margin-bottom: 20px;
+}
+.location-status {
+  font-size: 0.88rem;
+  color: var(--slate-600);
+  margin-top: 8px;
+  display: flex;
+  align-items: center;
+  gap: 6px;
+}
+.location-status.success {
+  color: #065f46;
+  font-weight: 600;
+}
+.location-status.denied {
+  color: #991b1b;
+  font-weight: 500;
+}
+
+/* Search Filters Box */
+.filter-bar {
+  background: var(--white);
+  border: 1px solid var(--slate-200);
+  border-radius: var(--radius-md);
+  padding: 20px;
+  margin-bottom: 28px;
+  box-shadow: var(--shadow-sm);
+}
+.filter-bar-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
+  gap: 14px;
+  align-items: flex-end;
+}

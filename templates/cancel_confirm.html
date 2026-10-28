@@ -1,0 +1,34 @@
+{% extends 'base.html' %}
+{% load static %}
+
+{% block title %}Cancel Appointment #{{ appointment.id }} | SmartCare{% endblock %}
+
+{% block content %}
+<div class="form-card" style="text-align:center;">
+  <span style="font-size:3rem; color:#dc2626;">⚠️</span>
+  <h1 class="form-title" style="color:#b91c1c; margin-top:12px;">Confirm Cancellation</h1>
+  <p class="form-description">
+    Are you sure you want to cancel this scheduled consultation? 
+    The time slot will be immediately released and made available for other patients.
+  </p>
+
+  <div style="background:var(--slate-50); border:1px solid var(--slate-200); border-radius:var(--radius-sm); padding:16px; margin-bottom:24px; text-align:left; font-size:0.92rem;">
+    <p style="margin-bottom:6px;"><strong>Doctor:</strong> Dr. {{ appointment.doctor.user.get_full_name }} ({{ appointment.doctor.specialization }})</p>
+    <p style="margin-bottom:6px;"><strong>Date:</strong> {{ appointment.appointment_date|date:"l, F d, Y" }}</p>
+    <p style="margin-bottom:6px;"><strong>Time Slot:</strong> {{ appointment.appointment_time|time:"h:i A" }}</p>
+    <p><strong>Hospital:</strong> {{ appointment.hospital_destination_name }}</p>
+  </div>
+
+  <form method="POST">
+    {% csrf_token %}
+    <div style="display:flex; justify-content:center; gap:14px;">
+      <a href="{% if user.is_patient %}{% url 'patient_dashboard' %}{% else %}{% url 'doctor_dashboard' %}{% endif %}" class="btn btn-outline">
+        Keep Appointment
+      </a>
+      <button type="submit" class="btn btn-danger">
+        Yes, Confirm Cancellation
+      </button>
+    </div>
+  </form>
+</div>
+{% endblock %}

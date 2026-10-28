@@ -1,0 +1,133 @@
+{% extends 'base.html' %}
+{% load static %}
+
+{% block title %}Edit Doctor Profile - Dr. {{ doctor.user.get_full_name }} | {{ hospital_name }}{% endblock %}
+
+{% block content %}
+<div class="auth-wrapper" style="max-width: 800px; margin: 32px auto;">
+  <div class="auth-card">
+    <div style="margin-bottom: 24px;">
+      <a href="{% url 'admin_doctor_list' %}" style="color:var(--primary-teal); text-decoration:none; font-size:0.9rem; font-weight:600;">
+        &larr; Back to Doctor Directory
+      </a>
+      <h2 style="font-size: 1.6rem; color: var(--slate-900); margin-top: 12px; font-weight: 800;">
+        Edit Doctor Profile: Dr. {{ doctor.user.get_full_name }}
+      </h2>
+      <p style="color: var(--slate-600); font-size: 0.95rem;">
+        Update medical credentials, specialization, consultation fee, hours and availability for <strong>{{ hospital_name }}</strong>.
+      </p>
+    </div>
+
+    <form method="POST" novalidate>
+      {% csrf_token %}
+
+      {% if form.non_field_errors %}
+        <div class="alert alert-error">
+          {% for error in form.non_field_errors %}
+            <p>{{ error }}</p>
+          {% endfor %}
+        </div>
+      {% endif %}
+
+      <div style="background:#f8fafc; border:1px solid var(--slate-200); border-radius:12px; padding:20px; margin-bottom:24px;">
+        <h3 style="font-size:1.05rem; color:var(--slate-800); margin-bottom:16px;">1. Clinician Identity & Account</h3>
+        <div class="form-grid" style="display:grid; grid-template-columns:1fr 1fr; gap:16px;">
+          <div class="form-group">
+            <label class="form-label">Full Name *</label>
+            {{ form.full_name }}
+            {% if form.full_name.errors %}<div class="form-error">{{ form.full_name.errors.0 }}</div>{% endif %}
+          </div>
+          <div class="form-group">
+            <label class="form-label">Doctor Email (Login Username) *</label>
+            {{ form.email }}
+            {% if form.email.errors %}<div class="form-error">{{ form.email.errors.0 }}</div>{% endif %}
+          </div>
+          <div class="form-group">
+            <label class="form-label">Contact Phone Number *</label>
+            {{ form.contact_number }}
+            {% if form.contact_number.errors %}<div class="form-error">{{ form.contact_number.errors.0 }}</div>{% endif %}
+          </div>
+          <div class="form-group">
+            <label class="form-label">Medical Registration / License # *</label>
+            {{ form.registration_number }}
+            {% if form.registration_number.errors %}<div class="form-error">{{ form.registration_number.errors.0 }}</div>{% endif %}
+          </div>
+        </div>
+      </div>
+
+      <div style="background:#f8fafc; border:1px solid var(--slate-200); border-radius:12px; padding:20px; margin-bottom:24px;">
+        <h3 style="font-size:1.05rem; color:var(--slate-800); margin-bottom:16px;">2. Clinical Qualifications & Practice</h3>
+        <div class="form-grid" style="display:grid; grid-template-columns:1fr 1fr; gap:16px;">
+          <div class="form-group">
+            <label class="form-label">Medical Specialization *</label>
+            {{ form.specialization }}
+            {% if form.specialization.errors %}<div class="form-error">{{ form.specialization.errors.0 }}</div>{% endif %}
+          </div>
+          <div class="form-group">
+            <label class="form-label">Qualifications (Degrees, Certifications) *</label>
+            {{ form.qualification }}
+            {% if form.qualification.errors %}<div class="form-error">{{ form.qualification.errors.0 }}</div>{% endif %}
+          </div>
+          <div class="form-group">
+            <label class="form-label">Experience (Years) *</label>
+            {{ form.experience_years }}
+            {% if form.experience_years.errors %}<div class="form-error">{{ form.experience_years.errors.0 }}</div>{% endif %}
+          </div>
+          <div class="form-group">
+            <label class="form-label">Consultation Fee ($) *</label>
+            {{ form.consultation_fee }}
+            {% if form.consultation_fee.errors %}<div class="form-error">{{ form.consultation_fee.errors.0 }}</div>{% endif %}
+          </div>
+        </div>
+      </div>
+
+      <div style="background:#f8fafc; border:1px solid var(--slate-200); border-radius:12px; padding:20px; margin-bottom:24px;">
+        <h3 style="font-size:1.05rem; color:var(--slate-800); margin-bottom:16px;">3. Consultation Schedule & Availability</h3>
+        
+        <div class="form-group" style="margin-bottom:16px;">
+          <label class="form-label">Available Consultation Days *</label>
+          <div style="display:flex; gap:16px; flex-wrap:wrap; margin-top:8px;">
+            {% for choice in form.available_days_list %}
+              <label style="display:inline-flex; align-items:center; gap:6px; font-size:0.9rem; cursor:pointer;">
+                {{ choice.tag }} {{ choice.choice_label }}
+              </label>
+            {% endfor %}
+          </div>
+          {% if form.available_days_list.errors %}<div class="form-error">{{ form.available_days_list.errors.0 }}</div>{% endif %}
+        </div>
+
+        <div class="form-grid" style="display:grid; grid-template-columns:1fr 1fr 1fr; gap:16px;">
+          <div class="form-group">
+            <label class="form-label">Daily Start Time *</label>
+            {{ form.work_start_time }}
+            {% if form.work_start_time.errors %}<div class="form-error">{{ form.work_start_time.errors.0 }}</div>{% endif %}
+          </div>
+          <div class="form-group">
+            <label class="form-label">Daily End Time *</label>
+            {{ form.work_end_time }}
+            {% if form.work_end_time.errors %}<div class="form-error">{{ form.work_end_time.errors.0 }}</div>{% endif %}
+          </div>
+          <div class="form-group">
+            <label class="form-label">Slot Duration (Minutes) *</label>
+            {{ form.slot_duration_minutes }}
+            {% if form.slot_duration_minutes.errors %}<div class="form-error">{{ form.slot_duration_minutes.errors.0 }}</div>{% endif %}
+          </div>
+        </div>
+
+        <div class="form-group" style="margin-top:16px;">
+          <label style="display:inline-flex; align-items:center; gap:8px; font-weight:600; cursor:pointer;">
+            {{ form.is_active }} Doctor is active and available for appointment booking
+          </label>
+        </div>
+      </div>
+
+      <div style="display:flex; justify-content:space-between; align-items:center;">
+        <a href="{% url 'admin_doctor_list' %}" class="btn btn-outline">Cancel</a>
+        <button type="submit" class="btn btn-primary" style="padding:12px 28px; font-size:1rem;">
+          Save Profile Changes
+        </button>
+      </div>
+    </form>
+  </div>
+</div>
+{% endblock %}

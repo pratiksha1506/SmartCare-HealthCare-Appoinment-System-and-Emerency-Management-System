@@ -1,0 +1,114 @@
+{% extends 'base.html' %}
+{% load static %}
+
+{% block title %}Doctor Registration | SmartCare{% endblock %}
+
+{% block content %}
+<div class="form-card wide">
+  <div style="text-align:center; margin-bottom:20px;">
+    <span style="font-size:2.5rem;">🩺</span>
+    <h1 class="form-title">Medical Clinician Registration</h1>
+    <p class="form-description">Join SmartCare to manage your daily appointments, schedule disruptions, and clinical emergency triage.</p>
+  </div>
+
+  <form method="POST" novalidate>
+    {% csrf_token %}
+
+    <div class="form-row">
+      <div class="form-group">
+        <label for="{{ form.full_name.id_for_label }}">Full Name (with Dr. prefix) *</label>
+        {{ form.full_name }}
+        {% if form.full_name.errors %}<div class="form-error-text">{{ form.full_name.errors.0 }}</div>{% endif %}
+      </div>
+      <div class="form-group">
+        <label for="{{ form.email.id_for_label }}">Professional Email Address *</label>
+        {{ form.email }}
+        {% if form.email.errors %}<div class="form-error-text">{{ form.email.errors.0 }}</div>{% endif %}
+      </div>
+    </div>
+
+    <div class="form-row">
+      <div class="form-group">
+        <label for="{{ form.password.id_for_label }}">Account Password *</label>
+        {{ form.password }}
+        {% if form.password.errors %}<div class="form-error-text">{{ form.password.errors.0 }}</div>{% endif %}
+      </div>
+      <div class="form-group">
+        <label for="{{ form.confirm_password.id_for_label }}">Confirm Password *</label>
+        {{ form.confirm_password }}
+        {% if form.confirm_password.errors %}<div class="form-error-text">{{ form.confirm_password.errors.0 }}</div>{% endif %}
+      </div>
+    </div>
+
+    <hr style="border:none; border-top:1px solid var(--slate-200); margin:20px 0;">
+    <h3 style="font-size:1.15rem; color:var(--slate-800); margin-bottom:16px;">Medical Credentials & Clinical Practice</h3>
+
+    <div class="form-row">
+      <div class="form-group">
+        <label for="{{ form.specialization.id_for_label }}">Medical Specialization *</label>
+        {{ form.specialization }}
+        {% if form.specialization.errors %}<div class="form-error-text">{{ form.specialization.errors.0 }}</div>{% endif %}
+      </div>
+      <div class="form-group">
+        <label for="{{ form.qualification.id_for_label }}">Medical Qualifications (e.g. MBBS, MD) *</label>
+        {{ form.qualification }}
+        {% if form.qualification.errors %}<div class="form-error-text">{{ form.qualification.errors.0 }}</div>{% endif %}
+      </div>
+    </div>
+
+    <div class="form-row">
+      <div class="form-group">
+        <label for="{{ form.registration_number.id_for_label }}">Medical Registration / License Number *</label>
+        {{ form.registration_number }}
+        {% if form.registration_number.errors %}<div class="form-error-text">{{ form.registration_number.errors.0 }}</div>{% endif %}
+      </div>
+      <div class="form-group">
+        <label for="{{ form.experience_years.id_for_label }}">Clinical Experience (Years) *</label>
+        {{ form.experience_years }}
+        {% if form.experience_years.errors %}<div class="form-error-text">{{ form.experience_years.errors.0 }}</div>{% endif %}
+      </div>
+    </div>
+
+    <div class="form-row">
+      <div class="form-group">
+        <label for="{{ form.hospital_name.id_for_label }}">Hospital or Clinic Affiliation *</label>
+        {{ form.hospital_name }}
+        {% if form.hospital_name.errors %}<div class="form-error-text">{{ form.hospital_name.errors.0 }}</div>{% endif %}
+      </div>
+      <div class="form-group">
+        <label for="{{ form.consultation_fee.id_for_label }}">Consultation Fee ($) *</label>
+        {{ form.consultation_fee }}
+        {% if form.consultation_fee.errors %}<div class="form-error-text">{{ form.consultation_fee.errors.0 }}</div>{% endif %}
+      </div>
+    </div>
+
+    <div class="form-group">
+      <label for="{{ form.hospital_address.id_for_label }}">Hospital Clinic Physical Address *</label>
+      {{ form.hospital_address }}
+      <div class="form-help-text">Used as destination point for patient journey and departure calculations.</div>
+      {% if form.hospital_address.errors %}<div class="form-error-text">{{ form.hospital_address.errors.0 }}</div>{% endif %}
+    </div>
+
+    <div class="form-row">
+      <div class="form-group">
+        <label for="{{ form.availability_summary.id_for_label }}">Weekly Availability Summary *</label>
+        {{ form.availability_summary }}
+        {% if form.availability_summary.errors %}<div class="form-error-text">{{ form.availability_summary.errors.0 }}</div>{% endif %}
+      </div>
+      <div class="form-group">
+        <label for="{{ form.contact_number.id_for_label }}">Contact Telephone *</label>
+        {{ form.contact_number }}
+        {% if form.contact_number.errors %}<div class="form-error-text">{{ form.contact_number.errors.0 }}</div>{% endif %}
+      </div>
+    </div>
+
+    <button type="submit" class="btn btn-secondary" style="width:100%; padding:12px; font-size:1.05rem; margin-top:12px;">
+      Register as Medical Clinician &rarr;
+    </button>
+  </form>
+
+  <p style="text-align:center; font-size:0.9rem; color:var(--slate-600); margin-top:20px;">
+    Already have a doctor account? <a href="{% url 'login' %}" style="color:var(--primary-blue); font-weight:700;">Sign In here</a>
+  </p>
+</div>
+{% endblock %}

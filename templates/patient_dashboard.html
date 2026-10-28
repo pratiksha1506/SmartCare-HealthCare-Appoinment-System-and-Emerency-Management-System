@@ -1,0 +1,258 @@
+{% extends 'base.html' %}
+{% load static %}
+
+{% block title %}Patient Portal | {{ patient_profile.user.get_full_name }} | {{ DEFAULT_HOSPITAL_NAME }}{% endblock %}
+
+{% block content %}
+<div class="dashboard-header">
+  <div>
+    <h1>Welcome, {{ patient_profile.user.first_name|default:patient_profile.user.username }}</h1>
+    <p class="dashboard-subtitle">
+      {{ DEFAULT_HOSPITAL_NAME }} &bull; Personal Patient Portal
+    </p>
+  </div>
+  <div style="display:flex; gap:10px;">
+    <a href="{% url 'find_doctors' %}" class="btn btn-primary btn-sm">
+      + Book New Consultation
+    </a>
+    <a href="{% url 'emergency_advisory' %}" class="btn btn-danger btn-sm">
+      🚨 Emergency Assistance
+    </a>
+  </div>
+</div>
+
+<!-- Emergency Medical Safety Notice (Feature 8 & 9) -->
+<div class="clinical-disclaimer-box">
+  <strong>🚨 Critical Medical Safety Notice:</strong>
+  If you are experiencing acute chest pain, severe trauma, stroke symptoms, or sudden severe illness, do not wait for your scheduled appointment time. Call <strong>911 / 112</strong> or go directly to the {{ DEFAULT_HOSPITAL_NAME }} Emergency Department. Never delay emergency medical care because of a scheduled appointment or queue calculation.
+</div>
+
+<!-- Emergency Queue Status Section (Feature 7) -->
+{% if emergency_status_data %}
+  <div class="card" style="border-left: 5px solid #dc2626; margin-bottom:28px; background:linear-gradient(to right, #fef2f2, #ffffff);">
+    <div style="display:flex; justify-content:space-between; align-items:flex-start; flex-wrap:wrap; gap:12px;">
+      <div>
+        <h3 style="font-size:1.25rem; color:#b91c1c; display:flex; align-items:center; gap:8px;">
+          🚨 Your Emergency Queue Status
+        </h3>
+        <p style="font-size:0.85rem; color:var(--slate-500);">
+          Hospital Triage Case ID: <code>{{ emergency_status_data.patient_code }}</code>
+        </p>
+      </div>
+      <div>
+        <span class="badge-priority-{{ emergency_status_data.priority_level }}">
+          {{ emergency_status_data.priority_name }}
+        </span>
+      </div>
+    </div>
+
+    <div style="display:grid; grid-template-columns:repeat(auto-fit, minmax(180px, 1fr)); gap:16px; margin:16px 0;">
+      {% if emergency_status_data.in_active_queue %}
+        <div style="background:var(--white); border:1px solid #fecaca; border-radius:var(--radius-sm); padding:12px; text-align:center;">
+          <div style="font-size:0.78rem; text-transform:uppercase; color:var(--slate-500); font-weight:700;">Queue Position</div>
+          <div style="font-size:2.2rem; font-weight:900; color:#dc2626;">#{{ emergency_status_data.position }}</div>
+          <div style="font-size:0.82rem; color:var(--slate-600);">{{ emergency_status_data.patients_ahead }} patient{{ emergency_status_data.patients_ahead|pluralize }} ahead of you</div>
+        </div>
+      {% endif %}
+
+      <div style="background:var(--white); border:1px solid var(--slate-200); border-radius:var(--radius-sm); padding:12px;">
+        <div style="font-size:0.78rem; text-transform:uppercase; color:var(--slate-500); font-weight:700;">Current Status</div>
+        <div style="margin-top:4px;">
+          <span class="badge-status status-{{ emergency_status_data.status|lower }}">{{ emergency_status_data.status_display }}</span>
+        </div>
+        <div style="font-size:0.8rem; color:var(--slate-500); margin-top:6px;">Waited: {{ emergency_status_data.waiting_duration_display }}</div>
+      </div>
+
+      <div style="background:var(--white); border:1px solid var(--slate-200); border-radius:var(--radius-sm); padding:12px;">
+        <div style="font-size:0.78rem; text-transform:uppercase; color:var(--slate-500); font-weight:700;">Arrival Time</div>
+        <div style="font-size:1.1rem; font-weight:700; color:var(--slate-800); margin-top:4px;">
+          {{ emergency_status_data.arrival_time|time:"h:i A" }}
+        </div>
+        <div style="font-size:0.78rem; color:var(--slate-500); margin-top:2px;">Facility: {{ DEFAULT_HOSPITAL_NAME }}</div>
+      </div>
+    </div>
+
+    <p style="font-size:0.82rem; color:var(--slate-500); line-height:1.4;">
+      ℹ️ {{ emergency_status_data.disclaimer }}
+    </p>
+  </div>
+{% endif %}
+
+<!-- Time to Leave Reminder Banner -->
+{% for apt in active_alerts %}
+  <div class="time-to-leave-banner" id="dashboard-leave-banner">
+    <div class="time-to-leave-content">
+      <h3>🚗 Time to Leave! Recommended Departure Alert</h3>
+      <p>
+        Your consultation with <strong>Dr. {{ apt.doctor.user.get_full_name }}</strong> is scheduled for 
+        <strong>{{ apt.appointment_time|time:"h:i A" }}</strong> at <strong>{{ DEFAULT_HOSPITAL_NAME }}</strong>. 
+        Recommended departure time: <strong>{{ apt.recommended_departure_time|time:"h:i A" }}</strong> 
+        (journey: {{ apt.estimated_travel_duration_minutes }}m with a {{ apt.safety_buffer_minutes }}m safety buffer).
+      </p>
+    </div>
+    <div>
+      <a href="{% url 'appointment_detail' apt.id %}" class="btn btn-sm btn-outline" style="background:#ffffff; color:#b91c1c; font-weight:700;">
+        View Journey Plan &rarr;
+      </a>
+    </div>
+  </div>
+{% endfor %}
+
+<div id="dynamic-delay-warning-box"></div>
+
+<!-- Upcoming Consultations (Strict Patient Isolation) -->
+<section style="margin-bottom: 40px;">
+  <h2 style="font-size:1.45rem; color:var(--slate-900); margin-bottom:16px; display:flex; align-items:center; gap:8px;">
+    <span>🗓️</span> My Upcoming Consultations ({{ upcoming_appointments.count }})
+  </h2>
+
+  {% if upcoming_appointments %}
+    <div class="cards-grid">
+      {% for apt in upcoming_appointments %}
+        <div class="card" style="border-top: 4px solid var(--primary-teal); display:flex; flex-direction:column; justify-content:space-between;">
+          <div>
+            <!-- Status and Date -->
+            <div style="display:flex; justify-content:space-between; align-items:center; margin-bottom:12px;">
+              <span class="badge-status status-{{ apt.status|lower }}">{{ apt.get_status_display }}</span>
+              <span style="font-size:0.85rem; font-weight:700; color:var(--slate-600);">
+                {{ apt.appointment_date|date:"D, M d, Y" }}
+              </span>
+            </div>
+
+            {% if apt.delayed_by_minutes > 0 %}
+              <div style="background:#fffbeb; border:1px solid #fde68a; border-radius:var(--radius-sm); padding:10px 12px; margin-bottom:14px; font-size:0.85rem; color:#92400e;">
+                ⚠️ <strong>Emergency Case Delay:</strong> Dr. {{ apt.doctor.user.get_full_name }} was summoned for an acute emergency. 
+                Appointment delayed by <strong>+{{ apt.delayed_by_minutes }} mins</strong>. Recommended departure adjusted accordingly.
+              </div>
+            {% endif %}
+
+            <h3 style="font-size:1.25rem; color:var(--slate-900); margin-bottom:4px;">
+              Dr. {{ apt.doctor.user.get_full_name }}
+            </h3>
+            <p style="font-size:0.85rem; font-weight:700; color:var(--primary-teal); margin-bottom:8px;">
+              {{ apt.doctor.specialization }}
+            </p>
+            <p style="font-size:0.85rem; color:var(--slate-600); margin-bottom:4px;">
+              🏥 {{ DEFAULT_HOSPITAL_NAME }}
+            </p>
+            <p style="font-size:0.82rem; color:var(--slate-500); margin-bottom:14px;">
+              Reason: <strong>{{ apt.get_consultation_reason_display }}</strong>
+            </p>
+
+            <!-- Departure Timing Breakdown Box -->
+            <div style="background:var(--slate-50); border:1px solid var(--slate-200); border-radius:var(--radius-sm); padding:12px; margin-bottom:14px;">
+              <div style="display:flex; justify-content:space-between; margin-bottom:6px; font-size:0.88rem;">
+                <span style="color:var(--slate-500);">Consultation Time:</span>
+                <strong>{{ apt.appointment_time|time:"h:i A" }}</strong>
+              </div>
+              <div style="display:flex; justify-content:space-between; margin-bottom:6px; font-size:0.88rem;">
+                <span style="color:var(--slate-500);">Estimated Journey:</span>
+                <span id="apt-duration-{{ apt.id }}">
+                  {% if apt.estimated_travel_duration_minutes %}
+                    {{ apt.estimated_travel_duration_minutes }} mins
+                  {% else %}
+                    Pending estimate
+                  {% endif %}
+                </span>
+              </div>
+              <div style="display:flex; justify-content:space-between; margin-bottom:6px; font-size:0.88rem;">
+                <span style="color:var(--slate-500);">Recommended Departure:</span>
+                <strong id="apt-departure-{{ apt.id }}" style="color:var(--primary-teal-dark); font-size:1.05rem;">
+                  {% if apt.recommended_departure_time %}
+                    {{ apt.recommended_departure_time|time:"h:i A" }}
+                  {% else %}
+                    --
+                  {% endif %}
+                </strong>
+              </div>
+              <div style="font-size:0.75rem; color:var(--slate-400); margin-top:6px;" id="apt-note-{{ apt.id }}">
+                {{ apt.routing_note|default:"Standard routing snapshot" }}
+              </div>
+            </div>
+
+            {% if apt.symptoms_description %}
+              <p style="font-size:0.82rem; color:var(--slate-600); margin-bottom:12px;">
+                💬 <strong>Reported Symptoms:</strong> {{ apt.symptoms_description|truncatechars:65 }}
+              </p>
+            {% endif %}
+          </div>
+
+          <!-- Action Buttons -->
+          <div style="display:flex; gap:8px; margin-top:8px;">
+            <a href="{% url 'appointment_detail' apt.id %}" class="btn btn-sm btn-outline" style="flex:1;">
+              Journey Details
+            </a>
+            <button type="button" class="btn btn-sm btn-outline btn-refresh-journey" data-appointment-id="{{ apt.id }}" title="Recalculate route">
+              🔄 Refresh
+            </button>
+            <a href="{% url 'cancel_appointment' apt.id %}" class="btn btn-sm btn-outline" style="color:#dc2626; border-color:#fecaca;" title="Cancel booking">
+              Cancel
+            </a>
+          </div>
+        </div>
+      {% endfor %}
+    </div>
+  {% else %}
+    <div class="card" style="text-align:center; padding:40px;">
+      <p style="color:var(--slate-600); margin-bottom:14px;">You have no upcoming consultations scheduled.</p>
+      <a href="{% url 'find_doctors' %}" class="btn btn-primary">Find a Hospital Doctor & Book Slot</a>
+    </div>
+  {% endif %}
+</section>
+
+<!-- Past Appointments Section -->
+{% if past_appointments %}
+  <section>
+    <h2 style="font-size:1.3rem; color:var(--slate-800); margin-bottom:16px;">Past & Concluded Appointments</h2>
+    <div class="table-responsive">
+      <table class="dashboard-table">
+        <thead>
+          <tr>
+            <th>Date & Time</th>
+            <th>Attending Doctor</th>
+            <th>Specialization</th>
+            <th>Reason</th>
+            <th>Status & Consultation Summary</th>
+            <th>Actions</th>
+          </tr>
+        </thead>
+        <tbody>
+          {% for apt in past_appointments %}
+            <tr>
+              <td>
+                <strong>{{ apt.appointment_date|date:"M d, Y" }}</strong><br>
+                <span style="font-size:0.82rem; color:var(--slate-500);">{{ apt.appointment_time|time:"h:i A" }}</span>
+              </td>
+              <td>Dr. {{ apt.doctor.user.get_full_name }}</td>
+              <td><span style="font-size:0.82rem; color:var(--primary-teal); font-weight:600;">{{ apt.doctor.specialization }}</span></td>
+              <td>{{ apt.get_consultation_reason_display }}</td>
+              <td>
+                <span class="badge-status status-{{ apt.status|lower }}">{{ apt.get_status_display }}</span>
+                {% if apt.consultation_record %}
+                  <div style="margin-top:4px; font-size:0.8rem; color:#0f766e;">
+                    <strong>Dx:</strong> {{ apt.consultation_record.diagnosis|default:"Recorded"|truncatechars:35 }}
+                  </div>
+                  {% if apt.consultation_record.prescribed_medications %}
+                    <div style="font-size:0.75rem; color:#1e40af;">
+                      💊 Prescription available
+                    </div>
+                  {% endif %}
+                {% endif %}
+              </td>
+              <td>
+                <a href="{% url 'appointment_detail' apt.id %}" class="btn btn-sm btn-outline" title="View details and prescription summary">
+                  {% if apt.consultation_record %}
+                    📋 View Prescription
+                  {% else %}
+                    View Details
+                  {% endif %}
+                </a>
+              </td>
+            </tr>
+          {% endfor %}
+        </tbody>
+      </table>
+    </div>
+  </section>
+{% endif %}
+{% endblock %}

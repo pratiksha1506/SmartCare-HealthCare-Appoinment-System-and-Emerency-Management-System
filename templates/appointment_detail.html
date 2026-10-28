@@ -1,0 +1,216 @@
+{% extends 'base.html' %}
+{% load static %}
+
+{% block title %}Appointment Journey & Departure Details | SmartCare{% endblock %}
+
+{% block content %}
+<div class="dashboard-header">
+  <div>
+    <h1>Consultation & Departure Plan</h1>
+    <p class="dashboard-subtitle">
+      Appointment #{{ appointment.id }} &bull; {{ appointment.appointment_date|date:"l, F d, Y" }} at {{ appointment.appointment_time|time:"h:i A" }}
+    </p>
+  </div>
+  <div style="display:flex; gap:10px;">
+    {% if user.is_patient %}
+      <a href="{% url 'patient_dashboard' %}" class="btn btn-outline btn-sm">&larr; Patient Dashboard</a>
+    {% else %}
+      <a href="{% url 'doctor_dashboard' %}" class="btn btn-outline btn-sm">&larr; Doctor Schedule</a>
+    {% endif %}
+  </div>
+</div>
+
+<!-- Dynamic Delay Alert Box (Rendered if dynamic update finds a delay) -->
+<div id="dynamic-delay-warning-box"></div>
+
+<!-- Emergency Disruption Warning Banner if applicable -->
+{% if appointment.delayed_by_minutes > 0 %}
+  <div class="alert alert-warning" style="margin-bottom:24px;">
+    <div>
+      <strong>⚠️ Emergency Schedule Adjustment:</strong> 
+      Dr. {{ doctor.user.get_full_name }} was summoned to an acute emergency. 
+      This appointment has been shifted by <strong>+{{ appointment.delayed_by_minutes }} minutes</strong>. 
+      Your departure time has been automatically recalculated.
+    </div>
+  </div>
+{% endif %}
+
+<!-- Journey Timeline Visualization (Feature 7 & 12) -->
+<div class="journey-card">
+  <div style="display:flex; justify-content:space-between; align-items:center; flex-wrap:wrap; gap:12px; margin-bottom:12px;">
+    <h2 style="font-size:1.35rem; color:var(--slate-900);">Smart Departure Timeline</h2>
+    <span class="badge-status status-{{ appointment.status|lower }}">{{ appointment.get_status_display }}</span>
+  </div>
+
+  <div class="journey-timeline">
+    <!-- Step 1: Recommended Departure -->
+    <div class="journey-step active">
+      <div class="journey-step-icon">🚗</div>
+      <div class="journey-step-time" id="apt-departure-{{ appointment.id }}">
+        {{ appointment.recommended_departure_time|time:"h:i A"|default:"Pending" }}
+      </div>
+      <div class="journey-step-label">Recommended Departure</div>
+      <div style="font-size:0.75rem; color:var(--slate-500); margin-top:2px;">
+        Leaves from: {{ appointment.patient_origin_address|default:"Starting point"|truncatechars:25 }}
+      </div>
+    </div>
+
+    <!-- Step 2: Transit Duration -->
+    <div class="journey-step">
+      <div class="journey-step-icon">🛣️</div>
+      <div class="journey-step-time" id="apt-duration-{{ appointment.id }}">
+        {{ appointment.estimated_travel_duration_minutes|default:"--" }} mins
+      </div>
+      <div class="journey-step-label">Estimated Transit Time</div>
+      <div style="font-size:0.75rem; color:var(--slate-500); margin-top:2px;">
+        Provider: {{ appointment.routing_provider_used|default:ROUTING_PROVIDER|upper }}
+      </div>
+    </div>
+
+    <!-- Step 3: Estimated Arrival & Buffer -->
+    <div class="journey-step">
+      <div class="journey-step-icon">🏥</div>
+      <div class="journey-step-time" id="apt-arrival-{{ appointment.id }}">
+        {{ appointment.estimated_arrival_time|time:"h:i A"|default:"--" }}
+      </div>
+      <div class="journey-step-label">Hospital Arrival</div>
+      <div style="font-size:0.75rem; color:var(--primary-blue); font-weight:700; margin-top:2px;">
+        {{ appointment.safety_buffer_minutes }} mins safety buffer
+      </div>
+    </div>
+
+    <!-- Step 4: Consultation Starts -->
+    <div class="journey-step">
+      <div class="journey-step-icon">🩺</div>
+      <div class="journey-step-time" style="color:var(--primary-teal-dark);">
+        {{ appointment.appointment_datetime|time:"h:i A" }}
+      </div>
+      <div class="journey-step-label">Consultation Starts</div>
+      <div style="font-size:0.75rem; color:var(--slate-500); margin-top:2px;">
+        30 min consultation
+      </div>
+    </div>
+  </div>
+
+  <!-- Routing Meta & Disclaimers -->
+  <div style="background:var(--slate-50); border:1px solid var(--slate-200); border-radius:var(--radius-sm); padding:14px 18px; margin-top:20px; font-size:0.85rem; color:var(--slate-600); line-height:1.5;">
+    <div style="display:flex; justify-content:space-between; flex-wrap:wrap; gap:10px;">
+      <div>
+        <strong>Routing Method:</strong> 
+        <span id="apt-note-{{ appointment.id }}">{{ appointment.routing_note|default:"Standard routing calculation" }}</span>
+      </div>
+      <div>
+        <strong>Last Updated:</strong> 
+        <span id="apt-last-update-{{ appointment.id }}">
+          {% if appointment.last_travel_update %}
+            {{ appointment.last_travel_update|date:"M d, Y h:i A" }}
+          {% else %}
+            Initial booking
+          {% endif %}
+        </span>
+      </div>
+    </div>
+
+    <!-- Required Traffic Notice (Feature 6 & 7) -->
+    <div style="margin-top:10px; font-size:0.8rem; color:var(--slate-500); border-top:1px dashed var(--slate-200); padding-top:8px;">
+      ⚠️ <em>Notice: Journey estimates can fluctuate due to unexpected traffic congestion, road works, weather, or localized transit disruptions. Always verify road conditions prior to departure.</em>
+    </div>
+  </div>
+
+  <!-- Action Controls -->
+  <div style="display:flex; justify-content:space-between; align-items:center; margin-top:24px; flex-wrap:wrap; gap:12px;">
+    <button type="button" class="btn btn-primary btn-refresh-journey" data-appointment-id="{{ appointment.id }}">
+      🔄 Refresh Journey Estimate Now
+    </button>
+    {% if appointment.status != 'CANCELLED' and appointment.status != 'COMPLETED' %}
+      <a href="{% url 'cancel_appointment' appointment.id %}" class="btn btn-outline" style="color:#dc2626; border-color:#fecaca;">
+        Cancel Appointment
+      </a>
+    {% endif %}
+  </div>
+</div>
+
+<!-- Appointment & Clinical Context Grid -->
+<div class="cards-grid">
+  <!-- Patient Summary Card -->
+  <div class="card">
+    <h3 style="font-size:1.15rem; color:var(--slate-900); margin-bottom:12px;">Patient Information</h3>
+    <p style="margin-bottom:6px;"><strong>Name:</strong> {{ patient.user.get_full_name }}</p>
+    <p style="margin-bottom:6px;"><strong>Email:</strong> {{ patient.user.email }}</p>
+    <p style="margin-bottom:6px;"><strong>Phone:</strong> {{ patient.user.contact_number|default:"--" }}</p>
+    <p style="margin-bottom:6px;"><strong>Departure Origin:</strong> {{ appointment.patient_origin_address|default:"Not specified" }}</p>
+    {% if appointment.health_concern %}
+      <div style="background:var(--slate-50); padding:10px; border-radius:var(--radius-sm); margin-top:12px; font-size:0.88rem;">
+        <strong>Reported Concern:</strong><br>
+        {{ appointment.health_concern }}
+      </div>
+    {% endif %}
+  </div>
+
+  <!-- Doctor & Hospital Card -->
+  <div class="card">
+    <h3 style="font-size:1.15rem; color:var(--slate-900); margin-bottom:12px;">Attending Specialist</h3>
+    <p style="margin-bottom:6px;"><strong>Name:</strong> Dr. {{ doctor.user.get_full_name }}</p>
+    <p style="margin-bottom:6px;"><strong>Department:</strong> {{ doctor.specialization }}</p>
+    <p style="margin-bottom:6px;"><strong>License No:</strong> {{ doctor.registration_number }}</p>
+    <p style="margin-bottom:6px;"><strong>Hospital:</strong> {{ appointment.hospital_destination_name }}</p>
+    <p style="margin-bottom:6px; font-size:0.85rem; color:var(--slate-500);">📍 {{ appointment.hospital_destination_address }}</p>
+    <p style="margin-top:10px; font-size:0.9rem;"><strong>Fee:</strong> ${{ doctor.consultation_fee }}</p>
+  </div>
+</div>
+
+<!-- Clinical Consultation & Prescription Summary (Feature 5 & 6) -->
+{% if appointment.consultation_record %}
+  <div class="card" style="margin-top: 24px; border-left: 4px solid var(--primary-teal); background:#fcfefe;">
+    <div style="display:flex; justify-content:space-between; align-items:center; margin-bottom:16px;">
+      <h2 style="font-size:1.3rem; color:var(--slate-900); font-weight:700; margin:0;">
+        📋 Clinical Consultation Summary
+      </h2>
+      <span class="badge-status status-confirmed">Certified by Dr. {{ doctor.user.get_full_name }}</span>
+    </div>
+
+    <div style="display:grid; grid-template-columns: 1fr 1fr; gap:20px;">
+      {% if appointment.consultation_record.diagnosis %}
+        <div>
+          <strong style="color:var(--slate-700); font-size:0.9rem;">Diagnosis / Clinical Assessment:</strong>
+          <div style="background:white; border:1px solid #e2e8f0; border-radius:8px; padding:12px; margin-top:6px; font-weight:600; color:#0f766e;">
+            {{ appointment.consultation_record.diagnosis }}
+          </div>
+        </div>
+      {% endif %}
+
+      {% if appointment.consultation_record.treatment_plan %}
+        <div>
+          <strong style="color:var(--slate-700); font-size:0.9rem;">Treatment Plan & Recommendations:</strong>
+          <div style="background:white; border:1px solid #e2e8f0; border-radius:8px; padding:12px; margin-top:6px; color:var(--slate-800);">
+            {{ appointment.consultation_record.treatment_plan|linebreaks }}
+          </div>
+        </div>
+      {% endif %}
+
+      {% if appointment.consultation_record.prescribed_medications %}
+        <div style="grid-column: 1 / -1;">
+          <strong style="color:#1e40af; font-size:0.9rem;">💊 Prescribed Medications:</strong>
+          <div style="background:#eff6ff; border:1px solid #bfdbfe; border-radius:8px; padding:14px; margin-top:6px; color:#1e3a8a; font-family:monospace; font-size:0.95rem;">
+            {{ appointment.consultation_record.prescribed_medications|linebreaks }}
+          </div>
+        </div>
+      {% endif %}
+
+      {% if appointment.consultation_record.follow_up_instructions or appointment.consultation_record.follow_up_date %}
+        <div style="grid-column: 1 / -1;">
+          <strong style="color:var(--slate-700); font-size:0.9rem;">Follow-up Instructions:</strong>
+          <div style="background:white; border:1px solid #e2e8f0; border-radius:8px; padding:12px; margin-top:6px; color:var(--slate-800);">
+            {{ appointment.consultation_record.follow_up_instructions|linebreaks|default:"None specified" }}
+            {% if appointment.consultation_record.follow_up_date %}
+              <div style="margin-top:8px; font-weight:700; color:var(--primary-teal);">
+                📅 Recommended Return Date: {{ appointment.consultation_record.follow_up_date|date:"F d, Y" }}
+              </div>
+            {% endif %}
+          </div>
+        </div>
+      {% endif %}
+    </div>
+  </div>
+{% endif %}
+{% endblock %}

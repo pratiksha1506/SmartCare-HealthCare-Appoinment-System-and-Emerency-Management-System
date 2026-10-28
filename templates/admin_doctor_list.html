@@ -1,0 +1,125 @@
+{% extends 'base.html' %}
+{% load static %}
+
+{% block title %}Manage Hospital Doctors | {{ hospital_name }}{% endblock %}
+
+{% block content %}
+<div class="dashboard-header">
+  <div>
+    <h1>Hospital Doctor Directory & Roster</h1>
+    <p class="dashboard-subtitle">
+      {{ hospital_name }} &bull; Hospital Administrator Management Portal
+    </p>
+  </div>
+  <div style="display:flex; gap:8px; flex-wrap:wrap;">
+    <a href="{% url 'admin_doctor_create' %}" class="btn btn-primary" style="font-weight:700;">
+      + Add Doctor
+    </a>
+    <a href="{% url 'admin_patient_list' %}" class="btn btn-outline">
+      👥 Patients Directory
+    </a>
+    <a href="{% url 'admin_appointment_list' %}" class="btn btn-outline">
+      📋 All Appointments
+    </a>
+  </div>
+</div>
+
+<div class="card" style="margin-bottom: 24px; background:linear-gradient(to right, #f0fdfa, #eff6ff);">
+  <h3 style="font-size:1.1rem; color:var(--slate-900); margin-bottom:4px;">
+    🏥 Single-Hospital Doctor Management Policy
+  </h3>
+  <p style="font-size:0.88rem; color:var(--slate-600);">
+    All doctors listed below belong to <strong>{{ hospital_name }}</strong>. 
+    Doctor accounts are created strictly by hospital administrators to maintain credential integrity. 
+    Doctors log in with their assigned email and password to manage their specific consultation schedules.
+  </p>
+</div>
+
+<div class="table-responsive">
+  <table class="dashboard-table">
+    <thead>
+      <tr>
+        <th>Doctor Name</th>
+        <th>Specialization</th>
+        <th>License Number</th>
+        <th>Consultation Fee</th>
+        <th>Availability & Schedule</th>
+        <th>Status</th>
+        <th>Administrative Actions</th>
+      </tr>
+    </thead>
+    <tbody>
+      {% for doctor in doctors %}
+        <tr>
+          <td>
+            <strong style="font-size:1rem; color:var(--slate-900);">Dr. {{ doctor.user.get_full_name }}</strong>
+            <div style="font-size:0.8rem; color:var(--slate-500);">✉️ {{ doctor.user.email }}</div>
+            {% if doctor.user.contact_number %}
+              <div style="font-size:0.78rem; color:var(--slate-500);">📞 {{ doctor.user.contact_number }}</div>
+            {% endif %}
+          </td>
+          <td>
+            <span style="font-size:0.85rem; font-weight:700; color:var(--primary-teal); background:var(--primary-teal-light); padding:2px 8px; border-radius:9999px;">
+              {{ doctor.specialization }}
+            </span>
+            <div style="font-size:0.78rem; color:var(--slate-500); margin-top:2px;">{{ doctor.qualification }}</div>
+          </td>
+          <td>
+            <code>{{ doctor.registration_number }}</code>
+            <div style="font-size:0.78rem; color:var(--slate-500);">{{ doctor.experience_years }} yrs exp</div>
+          </td>
+          <td>
+            <strong>${{ doctor.consultation_fee }}</strong>
+            <div style="font-size:0.75rem; color:var(--slate-500);">per {{ doctor.slot_duration_minutes }}m slot</div>
+          </td>
+          <td>
+            <div style="font-size:0.85rem; color:var(--slate-700);">{{ doctor.availability_summary }}</div>
+            <div style="font-size:0.75rem; color:var(--slate-500);">Days: {{ doctor.available_days }}</div>
+          </td>
+          <td>
+            {% if doctor.is_active %}
+              <span class="badge-status status-confirmed">Active</span>
+            {% else %}
+              <span class="badge-status status-cancelled">Inactive</span>
+            {% endif %}
+          </td>
+          <td>
+            <div style="display:flex; gap:6px; flex-wrap:wrap;">
+              <a href="{% url 'admin_doctor_detail' doctor.id %}" class="btn btn-sm btn-outline" title="View doctor profile & appointments">
+                👁️ View
+              </a>
+              <a href="{% url 'admin_doctor_edit' doctor.id %}" class="btn btn-sm btn-outline" title="Edit doctor profile, fees and availability">
+                ✏️ Edit
+              </a>
+              <a href="{% url 'admin_doctor_password_reset' doctor.id %}" class="btn btn-sm btn-outline" title="Reset doctor account password">
+                🔑 Reset PW
+              </a>
+              <form method="POST" action="{% url 'admin_doctor_toggle_status' doctor.id %}" style="display:inline;">
+                {% csrf_token %}
+                {% if doctor.is_active %}
+                  <button type="submit" class="btn btn-sm btn-outline" style="color:#b91c1c; border-color:#fecaca;" title="Deactivate doctor from public directory">
+                    Deactivate
+                  </button>
+                {% else %}
+                  <button type="submit" class="btn btn-sm btn-outline" style="color:#059669; border-color:#a7f3d0;" title="Activate doctor for appointments">
+                    Activate
+                  </button>
+                {% endif %}
+              </form>
+            </div>
+          </td>
+        </tr>
+      {% empty %}
+        <tr>
+          <td colspan="7" style="text-align:center; padding:48px; color:var(--slate-500);">
+            <p style="font-size:1.05rem; margin-bottom:12px;">No doctors currently registered for this hospital.</p>
+            <a href="{% url 'admin_doctor_create' %}" class="btn btn-primary">
+              + Add the First Doctor
+            </a>
+          </td>
+        </tr>
+      {% endfor %}
+    </tbody>
+  </table>
+</div>
+{% endblock %}

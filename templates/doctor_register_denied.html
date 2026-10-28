@@ -1,0 +1,44 @@
+{% extends 'base.html' %}
+{% load static %}
+
+{% block title %}Doctor Registration Policy | {{ hospital_name }}{% endblock %}
+
+{% block content %}
+<div class="auth-wrapper" style="max-width: 620px; margin: 48px auto;">
+  <div class="auth-card" style="text-align: center; padding: 40px 32px; border-top: 4px solid var(--primary-teal);">
+    <div style="font-size: 3rem; margin-bottom: 16px;">🏥</div>
+    
+    <h1 style="font-size: 1.7rem; color: var(--slate-900); font-weight: 800; margin-bottom: 12px;">
+      Doctor Self-Registration Is Disabled
+    </h1>
+    
+    <p style="color: var(--slate-600); font-size: 0.95rem; line-height: 1.6; margin-bottom: 24px;">
+      In accordance with single-hospital clinical compliance at <strong>{{ hospital_name }}</strong>, public doctor self-registration is disabled. All physician accounts and clinical credentials must be verified and onboarded directly by the <strong>Hospital Administrator</strong>.
+    </p>
+
+    <div style="background: #f8fafc; border: 1px solid var(--slate-200); border-radius: 10px; padding: 18px; margin-bottom: 28px; text-align: left;">
+      <h3 style="font-size: 0.95rem; color: var(--slate-800); margin-bottom: 6px; font-weight: 700;">
+        Are you a Hospital Administrator?
+      </h3>
+      <p style="font-size: 0.85rem; color: var(--slate-600); margin-bottom: 12px;">
+        Sign in to your administrative account to access the doctor management portal, onboard verified physicians, and configure clinical practice schedules.
+      </p>
+      <a href="{% url 'login' %}?next={% url 'admin_doctor_create' %}" class="btn btn-primary" style="display: block; text-align: center; padding: 10px; font-weight: 700;">
+        Sign In as Hospital Administrator &rarr;
+      </a>
+    </div>
+
+    <div style="display: flex; justify-content: center; gap: 16px; flex-wrap: wrap;">
+      <a href="{% url 'login' %}" class="btn btn-outline" style="font-size: 0.9rem;">
+        Doctor / Staff Login
+      </a>
+      <a href="{% url 'patient_register' %}" class="btn btn-outline" style="font-size: 0.9rem;">
+        Patient Registration
+      </a>
+      <a href="{% url 'home' %}" class="btn btn-outline" style="font-size: 0.9rem;">
+        Return to Home
+      </a>
+    </div>
+  </div>
+</div>
+{% endblock %}
